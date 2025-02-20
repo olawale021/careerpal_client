@@ -99,7 +99,7 @@ const options: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/login',  // Custom sign-in page (optional)
+    signIn: 'login',  // Custom sign-in page (optional)
     error: '/auth/error',    // Custom error page (optional)
   },
   secret: process.env.NEXTAUTH_SECRET,
