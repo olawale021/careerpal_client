@@ -126,13 +126,13 @@ export default function AuthPage() {
               </div>
 
               <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => signIn("google")}
-              >
-                <FcGoogle className="h-5 w-5 mr-2" />
-                Continue with Google
-              </Button>
+              variant="outline" 
+              className="w-full"
+              onClick={() => signIn("google", { callbackUrl: "https://careerpalclient.vercel.app/dashboard" })}
+            >
+              <FcGoogle className="h-5 w-5 mr-2" />
+              Continue with Google
+            </Button>
             </Tabs>
           </CardContent>
         </Card>
