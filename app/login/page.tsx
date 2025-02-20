@@ -125,14 +125,18 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => signIn("google", { callbackUrl: "https://careerpalclient.vercel.app/dashboard" })}
-            >
-              <FcGoogle className="h-5 w-5 mr-2" />
-              Continue with Google
-            </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => signIn("google", { 
+                  callbackUrl: "https://careerpalclient.vercel.app/dashboard", 
+                  redirect: false // Prevents unwanted GET request 
+                })}
+              >
+                <FcGoogle className="h-5 w-5 mr-2" />
+                Continue with Google
+              </Button>
+
             </Tabs>
           </CardContent>
         </Card>
