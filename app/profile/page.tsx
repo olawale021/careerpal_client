@@ -215,7 +215,7 @@ export default function ProfilePage() {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.user?.jwt}`, // JWT token
+          Authorization: `Bearer ${session?.user?.jwt}`,
         },
         body: JSON.stringify({
           resume_id: resumeId,
@@ -237,14 +237,13 @@ export default function ProfilePage() {
   
       await fetchResumes(userId); // Refresh UI after deletion
     } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("An unknown error occurred.");
-        }
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred.");
       }
-      
-  
+    }
+  };  
   
   if (status === "loading") {
     return (
