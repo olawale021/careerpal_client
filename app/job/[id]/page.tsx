@@ -105,7 +105,7 @@ export default function JobDetails() {
           <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <CardTitle className="text-xl mb-2">Job Not Found</CardTitle>
           <CardDescription>
-            The job posting you're looking for doesn't exist or has been removed.
+            The job posting you&apos;re looking for doesn&apos;t exist or has been removed.
           </CardDescription>
           <Button className="mt-4" asChild>
             <a href="/dashboard">Back to Jobs</a>

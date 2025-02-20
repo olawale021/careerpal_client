@@ -1,6 +1,6 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { JWT } from "next-auth/jwt";
+// import { JWT } from "next-auth/jwt";
 
 // Define extended user and session types
 interface ExtendedUser extends User {

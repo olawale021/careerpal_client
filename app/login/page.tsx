@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signIn, signOut, SessionProvider } from "next-auth/react";
+import { useSession, signIn, SessionProvider } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";

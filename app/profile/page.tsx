@@ -32,12 +32,12 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-interface User {
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-  jwt?: string;
-}
+// interface User {
+//   name?: string | null;
+//   email?: string | null;
+//   image?: string | null;
+//   jwt?: string;
+// }
 
 interface Resume {
   id: string;
@@ -236,11 +236,14 @@ export default function ProfilePage() {
       }
   
       await fetchResumes(userId); // Refresh UI after deletion
-    } catch (err: any) {
-      setError(err.message || "Failed to delete resume");
-      console.error("Delete error:", err);
-    }
-  };
+    } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unknown error occurred.");
+        }
+      }
+      
   
   
   if (status === "loading") {
