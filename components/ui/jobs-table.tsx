@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,9 +10,9 @@ import {
   RefreshCcw, 
   ExternalLink, 
   Building2, 
-  MapPin, 
-  DollarSign, 
-  Calendar,
+  // MapPin, 
+  // DollarSign, 
+  // Calendar,
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
@@ -35,41 +35,39 @@ interface Job {
   created_at: string;
 }
 
-export default function JobsTable() {
+interface Filters {
+  search: string;
+  location: string;
+  jobType: string;
+  salary: number[];
+  remote: string;
+}
+
+interface JobsTableProps {
+  filters: Filters;
+}
+
+export default function JobsTable({ filters }: JobsTableProps) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
 
-  // ✅ Define `filters` state
-  const [filters, setFilters] = useState({
-    search: "",
-    location: "",
-    jobType: "",
-    salary: [0, 100000], // Min and max salary range
-    remote: "",
-  });
-
-  // ✅ Fetch jobs from API
-  async function fetchJobs() {
+  const fetchJobs = useCallback(async () => {
     try {
       setRefreshing(true);
       setLoading(true);
 
-      // ✅ Construct query parameters from `filters` state
       const queryParams = new URLSearchParams({
         page: page.toString(),
         limit: "20",
+        ...(filters.search && { search: filters.search }),
+        ...(filters.location && { location: filters.location }),
+        ...(filters.jobType && { jobType: filters.jobType }),
+        ...(filters.remote && { remote: filters.remote }),
+        minSalary: filters.salary[0].toString(),
+        maxSalary: filters.salary[1].toString(),
       });
-
-      if (filters.search) queryParams.append("search", filters.search);
-      if (filters.location) queryParams.append("location", filters.location);
-      if (filters.jobType) queryParams.append("jobType", filters.jobType);
-      if (filters.salary) {
-        queryParams.append("minSalary", filters.salary[0].toString());
-        queryParams.append("maxSalary", filters.salary[1].toString());
-      }
-      if (filters.remote) queryParams.append("remote", filters.remote);
 
       const res = await fetch(`http://127.0.0.1:8000/jobs?${queryParams}`);
       const data = await res.json();
@@ -78,17 +76,16 @@ export default function JobsTable() {
       setRefreshing(false);
       setLoading(false);
     }
-  }
+  }, [page, filters]); // Include filters in dependencies
 
-  // ✅ Run `fetchJobs` when `page` or `filters` change
+
   useEffect(() => {
     fetchJobs();
-  }, [page, filters]); // ✅ Added `filters` as a dependency
-
-  // ✅ Function to update filters
-  const updateFilters = (newFilters: Partial<typeof filters>) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
-  };
+  }, [fetchJobs]); // Now fetchJobs is a valid dependency
+  //  Function to update filters
+  // const updateFilters = (newFilters: Partial<typeof filters>) => {
+  //   setFilters((prev) => ({ ...prev, ...newFilters }));
+  // };
 
   // ✅ Handle manual refresh
   const handleRefresh = () => {

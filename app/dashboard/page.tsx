@@ -11,16 +11,24 @@
     import { Badge } from "@/components/ui/badge";
     import { RefreshCcw } from "lucide-react";
 
+    interface Filters {
+        search: string;
+        location: string;
+        jobType: string;
+        salary: number[];
+        remote: string;
+      }
+
     export default function Dashboard() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const [filters, setFilters] = useState({
-        search: "",
-        location: "",
-        jobType: "",
-        salary: [0, 100000], // Salary range in GBP
-        remote: "",
-    });
+        const { data: session, status } = useSession();
+        const router = useRouter();
+        const [filters, setFilters] = useState<Filters>({
+          search: "",
+          location: "",
+          jobType: "",
+          salary: [0, 100000],
+          remote: "",
+        });
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -37,6 +45,16 @@
     }
 
     if (!session) return null; // Prevent UI flicker before redirect
+
+    const handleResetFilters = () => {
+        setFilters({
+          search: "",
+          location: "",
+          jobType: "",
+          salary: [0, 100000],
+          remote: "",
+        });
+      };
 
     return (
         <div className="container mx-auto p-4 lg:p-8 min-h-screen">
@@ -114,7 +132,7 @@
 
             {/* Refresh Button */}
             <div className="flex justify-end">
-            <Button onClick={() => setFilters({ search: "", location: "", jobType: "", salary: [0, 100000], remote: "" })}>
+            <Button onClick={handleResetFilters}>
                 <RefreshCcw className="h-4 w-4 mr-2" />
                 Reset Filters
             </Button>

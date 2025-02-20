@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, DragEvent, ChangeEvent, FormEvent } from "react";
-import { useRouter } from "next/navigation"; // Import useRouter for navigation
+
 // import Link from "next/link";
 
 import { Card } from "@/components/ui/card";
@@ -18,7 +18,7 @@ interface ResumeScoreResponse {
 }
 
 const UploadResume: React.FC = () => {
-  const router = useRouter(); // ✅ Initialize Next.js Router
+ 
   const [file, setFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState<string>("");
   const [response, setResponse] = useState<ResumeScoreResponse | null>(null);

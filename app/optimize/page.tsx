@@ -8,8 +8,9 @@ import { Upload, FileText } from "lucide-react";
 
 // Type Definitions for Resume Data
 interface Skills {
-  "Technical Skills"?: string[];
-  "Soft Skills"?: string[];
+  "Technical Skills": string[];
+  "Soft Skills": string[];
+  [key: string]: string[];
 }
 
 interface WorkExperience {
@@ -121,12 +122,17 @@ const OptimizeResume: React.FC = () => {
   // Render skills section
   const renderSkills = (skills: Skills) => (
     <div className="grid grid-cols-2 gap-6">
-      {Object.entries(skills).map(([category, skillList]) => (
+      {Object.entries(skills).map(([category, skillList]: [string, string[]]) => (
         <div key={category} className="space-y-3">
-          <h4 className="font-medium text-gray-800 text-sm uppercase tracking-wider">{category}</h4>
+          <h4 className="font-medium text-gray-800 text-sm uppercase tracking-wider">
+            {category}
+          </h4>
           <div className="flex flex-wrap gap-2">
-            {skillList?.map((skill, index) => (
-              <span key={index} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-sm font-medium">
+            {skillList.map((skill: string, index: number) => (
+              <span 
+                key={`${category}-${skill}-${index}`}
+                className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-sm font-medium"
+              >
                 {skill}
               </span>
             ))}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -56,27 +56,39 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    console.log("🔍 Session Data:", session);
-  }, [session]);
-
-  // Fetch user ID & resumes when session is available
-  useEffect(() => {
-    if (status === "loading") return;
-    if (!session?.user?.email) {
-      setError("Authentication required");
-      setLoading(false);
-      return;
-    }
-    fetchUserIdAndResumes();
-  }, [session, status]);
-
-  const fetchUserIdAndResumes = async () => {
+   // Memoize fetchResumes to prevent unnecessary recreations
+   const fetchResumes = useCallback(async (user_id: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch user ID using email
+      const response = await fetch(`${API_URL}/resume/get-resumes?user_id=${user_id}`, {
+        headers: {
+          Authorization: `Bearer ${session?.user?.jwt}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch resumes");
+      }
+
+      const data = await response.json();
+      setResumes(data.resumes);
+    } catch (err) {
+      setError("Failed to load resumes");
+      console.error("Resume fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.user?.jwt]);
+
+  // Memoize fetchUserIdAndResumes to prevent unnecessary recreations
+  const fetchUserIdAndResumes = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
       const userIdResponse = await fetch(
         `${API_URL}/users/lookup/email?email=${session?.user?.email}`,
         {
@@ -97,42 +109,25 @@ export default function ProfilePage() {
       }
 
       setUserId(user_id);
-
-      // Now fetch resumes using user ID
       await fetchResumes(user_id);
     } catch (err) {
       setError("Failed to load user data");
-      console.error(" Error:", err);
+      console.error("Error:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.email, session?.user?.jwt, fetchResumes]);
 
-  const fetchResumes = async (user_id: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`${API_URL}/resume/get-resumes?user_id=${user_id}`, {
-        headers: {
-          Authorization: `Bearer ${session?.user?.jwt}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch resumes");
-      }
-
-      const data = await response.json();
-      setResumes(data.resumes);
-    } catch (err) {
-      setError("Failed to load resumes");
-      console.error(" Resume fetch error:", err);
-    } finally {
+  // Update useEffect to include all dependencies
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session?.user?.email) {
+      setError("Authentication required");
       setLoading(false);
+      return;
     }
-  };
+    fetchUserIdAndResumes();
+  }, [session?.user?.email, status, fetchUserIdAndResumes]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
