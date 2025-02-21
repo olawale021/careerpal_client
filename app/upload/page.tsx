@@ -25,7 +25,7 @@ const UploadResume: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [dragActive, setDragActive] = useState<boolean>(false);
 
-  const API_URL: string = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+  const API_URL: string = process.env.NEXT_PUBLIC_BACKEND_URL || "https://a3de-209-35-91-116.ngrok-free.app";
 
   // Drag & Drop Handling
   const handleDrag = (e: DragEvent<HTMLDivElement>) => {

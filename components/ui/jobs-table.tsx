@@ -69,7 +69,7 @@ export default function JobsTable({ filters }: JobsTableProps) {
         maxSalary: filters.salary[1].toString(),
       });
 
-      const res = await fetch(`http://127.0.0.1:8000/jobs?${queryParams}`);
+      const res = await fetch(`https://a3de-209-35-91-116.ngrok-free.app/jobs?${queryParams}`);
       const data = await res.json();
       setJobs(data.jobs || []);
     } finally {

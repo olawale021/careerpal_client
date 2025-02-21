@@ -63,7 +63,7 @@ const OptimizeResume: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL: string = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+  const API_URL: string = process.env.NEXT_PUBLIC_API_URL || "https://a3de-209-35-91-116.ngrok-free.app";
 
   // Ref for auto-scrolling to results
   const responseSectionRef = useRef<HTMLDivElement>(null);

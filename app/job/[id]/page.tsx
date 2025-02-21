@@ -82,7 +82,7 @@ export default function JobDetails() {
   useEffect(() => {
     async function fetchJobDetails() {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/jobs/${id}`);
+        const response = await fetch(`https://a3de-209-35-91-116.ngrok-free.app/jobs/${id}`);
         if (!response.ok) throw new Error("Failed to fetch job details");
         const data = await response.json();
         setJob(data);
