@@ -66,6 +66,7 @@ export default function ProfilePage() {
         headers: {
           Authorization: `Bearer ${session?.user?.jwt}`,
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true"
         },
       });
 
@@ -95,6 +96,7 @@ export default function ProfilePage() {
           headers: {
             Authorization: `Bearer ${session?.user?.jwt}`,
             "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true"
           },
         }
       );
@@ -151,6 +153,7 @@ export default function ProfilePage() {
         method: "POST",
         headers: {
           Authorization: `Bearer ${session?.user?.jwt}`,
+          "ngrok-skip-browser-warning": "true"
         },
         body: formData,
       });
@@ -179,6 +182,7 @@ export default function ProfilePage() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.user?.jwt}`,
+          "ngrok-skip-browser-warning": "true"
         },
         body: JSON.stringify({
           resume_id: resumeId,
@@ -211,6 +215,7 @@ export default function ProfilePage() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.user?.jwt}`,
+          "ngrok-skip-browser-warning": "true"
         },
         body: JSON.stringify({
           resume_id: resumeId,

@@ -57,7 +57,7 @@ export default function JobsTable({ filters }: JobsTableProps) {
     try {
       setRefreshing(true);
       setLoading(true);
-
+  
       const queryParams = new URLSearchParams({
         page: page.toString(),
         limit: "20",
@@ -68,17 +68,36 @@ export default function JobsTable({ filters }: JobsTableProps) {
         minSalary: filters.salary[0].toString(),
         maxSalary: filters.salary[1].toString(),
       });
-
-      const res = await fetch(`https://a3de-209-35-91-116.ngrok-free.app/jobs?${queryParams}`);
-      const data = await res.json();
-      setJobs(data.jobs || []);
+  
+      const apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/jobs?${queryParams}`;
+      console.log("Fetching jobs from:", apiUrl);
+  
+      const res = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",  // Bypass Ngrok warning
+        },
+      });
+  
+      const text = await res.text();
+      console.log("Raw API response:", text);
+  
+      try {
+        const data = JSON.parse(text);
+        setJobs(data.jobs || []);
+      } catch (error) {
+        console.error("JSON Parse Error:", error);
+        console.error("Response was:", text);
+      }
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
     } finally {
       setRefreshing(false);
       setLoading(false);
     }
-  }, [page, filters]); // Include filters in dependencies
-
-
+  }, [page, filters]);
+  
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]); // Now fetchJobs is a valid dependency
