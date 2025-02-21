@@ -82,19 +82,34 @@ export default function JobDetails() {
   useEffect(() => {
     async function fetchJobDetails() {
       try {
-        const response = await fetch(`https://a3de-209-35-91-116.ngrok-free.app/jobs/${id}`);
-        if (!response.ok) throw new Error("Failed to fetch job details");
-        const data = await response.json();
+        const response = await fetch(
+          `https://a3de-209-35-91-116.ngrok-free.app/jobs/${id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",  // ✅ Bypass Ngrok warning page
+            },
+          }
+        );
+  
+        const text = await response.text(); // Read response as text first
+        console.log("Raw API Response:", text); // ✅ Debug response
+  
+        if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
+  
+        const data = JSON.parse(text); // ✅ Now parse JSON safely
         setJob(data);
       } catch (error) {
-        console.error(error);
+        console.error("Fetch Job Details Error:", error);
       } finally {
         setLoading(false);
       }
     }
-
+  
     if (id) fetchJobDetails();
   }, [id]);
+  
 
   if (loading) return <LoadingSkeleton />;
 
