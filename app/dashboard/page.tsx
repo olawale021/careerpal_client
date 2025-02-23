@@ -1,142 +1,125 @@
-"use client"; // Ensures client-only rendering
+"use client";
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import JobsTable from "@/components/ui/jobs-table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
-import { RefreshCcw } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import JobCard from "../../components/ui/JobCard";
+import JobDetails from "../../components/ui/JobDetails";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 
-interface Filters {
-    search: string;
-    location: string;
-    jobType: string;
-    salary: number[];
-    remote: string;
+// ✅ Define Job Interface
+interface Job {
+  id: number;
+  title: string;
+  company: string;
+  location: string;
+  salary?: string;
+  job_type?: string;
+  remote_working?: string;
+  created_at: string;
 }
 
 export default function Dashboard() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const [filters, setFilters] = useState<Filters>({
-        search: "",
-        location: "",
-        jobType: "",
-        salary: [0, 100000],
-        remote: "",
-    });
+  // ✅ Explicitly define state type
+  const [state, setState] = useState<{
+    jobs: Job[];
+    loading: boolean;
+    page: number;
+    totalPages: number;
+    selectedJob: Job | null;
+    isMobileView: boolean;
+  }>({
+    jobs: [],
+    loading: true,
+    page: 1,
+    totalPages: 1,
+    selectedJob: null,
+    isMobileView: false,
+  });
 
-    useEffect(() => {
-        if (status === "unauthenticated") {
-            router.push("/login"); // Redirect if not logged in
-        }
-    }, [status, router]);
-
-    if (status === "loading") {
-        return (
-            <div className="flex justify-center items-center min-h-screen">
-                <p className="text-gray-500">Loading...</p>
-            </div>
-        );
-    }
-
-    if (!session) return null; // Prevent UI flicker before redirect
-
-    const handleResetFilters = () => {
-        setFilters({
-            search: "",
-            location: "",
-            jobType: "",
-            salary: [0, 100000],
-            remote: "",
-        });
+  useEffect(() => {
+    const handleResize = () => {
+      setState((prev) => ({
+        ...prev,
+        isMobileView: window.innerWidth < 768,
+      }));
     };
 
-    return (
-        <div className="container mx-auto p-4 lg:p-8 min-h-screen">
-            <div className="space-y-8">
-                {/* Page Header */}
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight mt-4">Job Listings</h1>
-                    <p className="text-muted-foreground mt-2">
-                        Browse and find the perfect job opportunities.
-                    </p>
-                </div>
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
-                {/* Filters Section */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {/* Search Filter */}
-                    <Input
-                        placeholder="Search job title..."
-                        value={filters.search}
-                        onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                    />
+  // ✅ Fetch Jobs from API
+  const fetchJobs = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/jobs?page=${state.page}&limit=10`
+      );
+      const data = await response.json();
 
-                    {/* Location Filter */}
-                    <Input
-                        placeholder="Location..."
-                        value={filters.location}
-                        onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-                    />
+      const jobs: Job[] = data.jobs || [];
 
-                    {/* Job Type Filter */}
-                    <Select onValueChange={(value) => setFilters({ ...filters, jobType: value })}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Job Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Full-time">Full-time</SelectItem>
-                            <SelectItem value="Part-time">Part-time</SelectItem>
-                            <SelectItem value="Contract">Contract</SelectItem>
-                            <SelectItem value="Internship">Internship</SelectItem>
-                        </SelectContent>
-                    </Select>
+      setState((prev) => ({
+        ...prev,
+        jobs,
+        totalPages: data.total_pages || 1,
+        loading: false,
+      }));
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+    }
+  }, [state.page]);
 
-                    {/* Salary Range Filter */}
-                    <div>
-                        <p className="text-sm text-muted-foreground mb-2">Salary Range (£)</p>
-                        <Slider
-                            min={0}
-                            max={100000}
-                            step={1000}
-                            value={filters.salary}
-                            onValueChange={(value) => setFilters({ ...filters, salary: value })}
-                        />
-                        <Badge variant="secondary" className="mt-2">
-                            £{filters.salary[0]} - £{filters.salary[1]}
-                        </Badge>
-                    </div>
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
-                    {/* Remote Work Filter */}
-                    <Select onValueChange={(value) => setFilters({ ...filters, remote: value })}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Remote Work" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Remote">Remote</SelectItem>
-                            <SelectItem value="Hybrid">Hybrid</SelectItem>
-                            <SelectItem value="On-site">On-site</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+  // ✅ Handle Page Change for Pagination
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= state.totalPages) {
+      setState((prev) => ({ ...prev, page: newPage }));
+    }
+  };
 
-                {/* Refresh Button */}
-                <div className="flex justify-end">
-                    <Button onClick={handleResetFilters}>
-                        <RefreshCcw className="h-4 w-4 mr-2" />
-                        Reset Filters
-                    </Button>
-                </div>
-
-                {/* Jobs Table */}
-                <JobsTable filters={filters} />
-            </div>
+  return (
+    <div className="min-h-screen pt-16">
+      {state.isMobileView && state.selectedJob ? (
+        <div className="p-4">
+          <Button onClick={() => setState({ ...state, selectedJob: null })} variant="outline" className="mb-4">
+            ← Back to Jobs
+          </Button>
+          <JobDetails job={state.selectedJob} />
         </div>
-    );
+      ) : (
+        <div className="grid md:grid-cols-[2fr,3fr] min-h-screen">
+          <div className="border-r">
+            {state.jobs.map((job) => (
+              <JobCard 
+                key={job.id} 
+                job={job} 
+                isSelected={state.selectedJob?.id === job.id} 
+                onSelect={() => setState({ ...state, selectedJob: job })} 
+              />
+            ))}
+
+            <div className="flex justify-between items-center p-4 border-t">
+              <Button onClick={() => handlePageChange(state.page - 1)} disabled={state.page === 1} variant="outline" className="w-28">
+                Previous
+              </Button>
+              <Badge variant="secondary" className="px-3 py-1">
+                Page {state.page} of {state.totalPages}
+              </Badge>
+              <Button onClick={() => handlePageChange(state.page + 1)} disabled={state.page >= state.totalPages} className="w-28">
+                Next
+              </Button>
+            </div>
+          </div>
+
+          <div className="hidden md:block">
+            <JobDetails job={state.selectedJob} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

@@ -30,7 +30,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://a3de-209-35-91-116.ngrok-free.app";
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://cp-v1-gfcvakcrdnd8gsgh.ukwest-01.azurewebsites.net";
 
 // interface User {
 //   name?: string | null;

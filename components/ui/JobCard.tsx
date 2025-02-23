@@ -1,0 +1,71 @@
+"use client";
+import { Badge } from "@/components/ui/badge";
+import { Building2, MapPin, DollarSign, Clock, ChevronRight } from "lucide-react";
+import { formatDate } from "@/components/ui/utils";
+
+interface Job {
+    id: number;
+    title: string;
+    company: string;
+    location: string;
+    salary?: string;
+    job_type?: string;
+    remote_working?: string;
+    created_at: string;
+  }
+  
+  interface JobCardProps {
+    job: Job;
+    isSelected: boolean;
+    onSelect: () => void; // ✅ No need to pass `job` from parent component
+  }
+  
+
+  const JobCard: React.FC<JobCardProps> = ({ job, isSelected, onSelect }) => (
+  <div 
+  onClick={onSelect}
+    className={`cursor-pointer border-b border-gray-200 hover:bg-blue-50 ${
+      isSelected ? 'bg-blue-50' : 'bg-white'
+    }`}
+  >
+    <div className="p-4">
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+        <h3 className="text-lg font-semibold text-black mb-1">
+            {job.title}
+        </h3>
+
+          <div className="space-y-1 text-sm">
+            <div className="flex items-center text-gray-900">
+              <Building2 className="h-4 w-4 mr-1.5 flex-shrink-0" />
+              <span className="font-medium">{job.company}</span>
+            </div>
+            <div className="flex items-center text-gray-600">
+              <MapPin className="h-4 w-4 mr-1.5 flex-shrink-0" />
+              <span>{job.location}</span>
+            </div>
+            {job.salary && (
+              <div className="flex items-center text-gray-700">
+                <DollarSign className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                <span>{job.salary}</span>
+              </div>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Badge variant="secondary">{job.job_type || 'Full-time'}</Badge>
+            {job.remote_working && (
+              <Badge variant="secondary">{job.remote_working}</Badge>
+            )}
+          </div>
+          <div className="mt-3 flex items-center text-xs text-gray-500">
+            <Clock className="h-3 w-3 mr-1" />
+            <span>Posted {formatDate(job.created_at)}</span>
+          </div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-gray-400 ml-2 flex-shrink-0" />
+      </div>
+    </div>
+  </div>
+);
+
+export default JobCard;

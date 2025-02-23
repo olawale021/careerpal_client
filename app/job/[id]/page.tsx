@@ -83,7 +83,7 @@ export default function JobDetails() {
     async function fetchJobDetails() {
       try {
         const response = await fetch(
-          `https://a3de-209-35-91-116.ngrok-free.app/jobs/${id}`,
+          `https://cp-v1-gfcvakcrdnd8gsgh.ukwest-01.azurewebsites.net/jobs/${id}`,
           {
             method: "GET",
             headers: {
