@@ -49,7 +49,7 @@ export default function Dashboard() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // ✅ Fetch Jobs from API
+  //  Fetch Jobs from API
   const fetchJobs = useCallback(async () => {
     try {
       const response = await fetch(
