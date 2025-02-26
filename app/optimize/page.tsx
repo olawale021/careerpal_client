@@ -63,7 +63,6 @@ const OptimizeResume: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL: string = process.env.NEXT_PUBLIC_API_URL || "https://cp-v1-gfcvakcrdnd8gsgh.ukwest-01.azurewebsites.net";
 
   // Ref for auto-scrolling to results
   const responseSectionRef = useRef<HTMLDivElement>(null);
@@ -97,7 +96,7 @@ const OptimizeResume: React.FC = () => {
     formData.append("job_description", jobDescription);
 
     try {
-      const res = await fetch(`${API_URL}/resume/optimize`, {
+      const res = await fetch(`/api/proxy?path=/resume/optimize`, {
         method: "POST",
         body: formData,
       });
@@ -110,9 +109,9 @@ const OptimizeResume: React.FC = () => {
       console.log("API Response:", rawData);
       setResponse(rawData.data);
 
-      alert(" Resume optimized successfully! Check the updated details below.");
+      alert("Resume optimized successfully! Check the updated details below.");
     } catch (error) {
-      console.error(" Error:", error);
+      console.error("Error:", error);
       setError("Failed to optimize resume. Please try again.");
     } finally {
       setLoading(false);

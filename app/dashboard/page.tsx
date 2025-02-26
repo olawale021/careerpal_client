@@ -5,6 +5,7 @@ import JobCard from "../../components/ui/JobCard";
 import JobDetails from "../../components/ui/JobDetails";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
+import { fetchApi } from '../../lib/api';
 
 // ✅ Define Job Interface
 interface Job {
@@ -52,16 +53,11 @@ export default function Dashboard() {
   //  Fetch Jobs from API
   const fetchJobs = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/jobs?page=${state.page}&limit=10`
-      );
-      const data = await response.json();
-
-      const jobs: Job[] = data.jobs || [];
-
+      const data = await fetchApi(`/jobs?page=${state.page}&limit=10`);
+      
       setState((prev) => ({
         ...prev,
-        jobs,
+        jobs: data.jobs || [],
         totalPages: data.total_pages || 1,
         loading: false,
       }));
