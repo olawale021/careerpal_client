@@ -29,8 +29,8 @@ import {
   Download,
   AlertCircle,
 } from "lucide-react";
+import { fetchApi } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://cp-v1-gfcvakcrdnd8gsgh.ukwest-01.azurewebsites.net";
 
 // interface User {
 //   name?: string | null;
@@ -61,20 +61,16 @@ export default function ProfilePage() {
     try {
       setLoading(true);
       setError(null);
-
-      const response = await fetch(`${API_URL}/resume/get-resumes?user_id=${user_id}`, {
+  
+      console.log("Fetching resumes for:", user_id);
+  
+      const data = await fetchApi(`/resume/get-resumes?user_id=${user_id}`, {
         headers: {
           Authorization: `Bearer ${session?.user?.jwt}`,
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true"
         },
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch resumes");
-      }
-
-      const data = await response.json();
+  
+      console.log("Resumes fetched:", data);
       setResumes(data.resumes);
     } catch (err) {
       setError("Failed to load resumes");
@@ -83,35 +79,30 @@ export default function ProfilePage() {
       setLoading(false);
     }
   }, [session?.user?.jwt]);
+  
 
   // Memoize fetchUserIdAndResumes to prevent unnecessary recreations
   const fetchUserIdAndResumes = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const userIdResponse = await fetch(
-        `${API_URL}/users/lookup/email?email=${session?.user?.email}`,
-        {
-          headers: {
-            Authorization: `Bearer ${session?.user?.jwt}`,
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true"
-          },
-        }
-      );
-
-      if (!userIdResponse.ok) {
-        throw new Error("Failed to fetch user ID");
-      }
-
-      const { user_id } = await userIdResponse.json();
-      if (!user_id) {
+  
+      console.log("Fetching user ID for:", session?.user?.email);
+  
+      const data = await fetchApi(`/users/lookup/email?email=${encodeURIComponent(session?.user?.email || '')}`, {
+        headers: {
+          Authorization: `Bearer ${session?.user?.jwt}`,
+        },
+      });
+  
+      console.log("User ID fetched:", data);
+  
+      if (!data.user_id) {
         throw new Error("User ID not found");
       }
-
-      setUserId(user_id);
-      await fetchResumes(user_id);
+  
+      setUserId(data.user_id);
+      await fetchResumes(data.user_id);
     } catch (err) {
       setError("Failed to load user data");
       console.error("Error:", err);
@@ -119,7 +110,8 @@ export default function ProfilePage() {
       setLoading(false);
     }
   }, [session?.user?.email, session?.user?.jwt, fetchResumes]);
-
+  
+  
   // Update useEffect to include all dependencies
   useEffect(() => {
     if (status === "loading") return;
@@ -149,11 +141,10 @@ export default function ProfilePage() {
       formData.append("file", file);
       formData.append("user_id", userId);
 
-      const response = await fetch(`${API_URL}/resume/upload`, {
+      const response = await fetchApi(`/resume/upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${session?.user?.jwt}`,
-          "ngrok-skip-browser-warning": "true"
         },
         body: formData,
       });
@@ -177,12 +168,11 @@ export default function ProfilePage() {
 
     try {
       setError(null);
-      const response = await fetch(`${API_URL}/resume/set-primary`, {
+      const response = await fetchApi(`/resume/set-primary`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.user?.jwt}`,
-          "ngrok-skip-browser-warning": "true"
         },
         body: JSON.stringify({
           resume_id: resumeId,
@@ -210,12 +200,11 @@ export default function ProfilePage() {
     try {
       setError(null);
   
-      const response = await fetch(`${API_URL}/resume/delete`, {
+      const response = await fetchApi(`/resume/delete`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.user?.jwt}`,
-          "ngrok-skip-browser-warning": "true"
         },
         body: JSON.stringify({
           resume_id: resumeId,

@@ -10,14 +10,14 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      console.error(` GET request failed with status ${response.status}`);
+      console.error(`❌ GET request failed with status ${response.status}`);
       return NextResponse.json({ error: 'Failed to fetch data' }, { status: response.status });
     }
 
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('GET Proxy Error:', error);
+    console.error('❌ GET Proxy Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const fullUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}${path}`;
-    console.log(` Attempting POST request to: ${fullUrl}`);
+    console.log(`🔗 Attempting POST request to: ${fullUrl}`);
 
     const response = await fetch(fullUrl, {
       method: 'POST',
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      console.error(` POST request failed with status ${response.status}`);
+      console.error(`❌ POST request failed with status ${response.status}`);
       const errorData = await response.json().catch(() => ({ error: 'Invalid JSON response' }));
       return NextResponse.json(errorData, { status: response.status });
     }
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error(' POST Proxy Error:', error);
+    console.error('❌ POST Proxy Error:', error);
     return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
   }
 }
