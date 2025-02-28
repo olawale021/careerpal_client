@@ -8,7 +8,7 @@ import { Button } from "../../components/ui/button";
 import { fetchApi } from '../../lib/api';
 import { Filter, FilterValues } from "../../components/ui/Filter";
 
-// ✅ Define Job Interface
+//  Define Job Interface
 interface Job {
   id: number;
   title: string;
