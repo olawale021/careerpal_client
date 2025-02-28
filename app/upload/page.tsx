@@ -1,139 +1,190 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import JobCard from "../../components/ui/JobCard";
-import JobDetails from "../../components/ui/JobDetails";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Upload, AlertCircle } from "lucide-react";
+import { fetchApi } from "@/lib/api";
+import { useSession } from "next-auth/react";
 
-// ✅ Define the Job Interface
-interface Job {
-  id: number;
-  title: string;
-  company: string;
-  location: string;
-  salary?: string;
-  job_type?: string;
-  remote_working?: string;
-  created_at: string;
+interface UploadState {
+  file: File | null;
+  isUploading: boolean;
+  error: string | null;
+  success: boolean;
+  uploadedUrl: string | null;
+  userId: string | null;
 }
 
-export default function Dashboard() {
-  // ✅ Explicitly define state type
-  const [state, setState] = useState<{
-    jobs: Job[];
-    loading: boolean;
-    page: number;
-    totalPages: number;
-    selectedJob: Job | null;
-    isMobileView: boolean;
-  }>({
-    jobs: [],
-    loading: true,
-    page: 1,
-    totalPages: 1,
-    selectedJob: null,
-    isMobileView: false,
+export default function UploadPage() {
+  const { data: session } = useSession();
+  
+  const [state, setState] = useState<UploadState>({
+    file: null,
+    isUploading: false,
+    error: null,
+    success: false,
+    uploadedUrl: null,
+    userId: null,
   });
 
-  // ✅ Detect screen size for responsive layout
+  // Fetch user ID when session is available
   useEffect(() => {
-    const handleResize = () => {
-      setState((prev) => ({
-        ...prev,
-        isMobileView: window.innerWidth < 768, // Switch for mobile view
-      }));
+    const fetchUserId = async () => {
+      if (session?.user?.email) {
+        try {
+          const response = await fetchApi(`/users/lookup/email?email=${encodeURIComponent(session.user.email)}`);
+          if (!response.user_id) {
+            throw new Error('User ID not found in response');
+          }
+          setState(prev => ({ ...prev, userId: response.user_id }));
+        } catch (error) {
+          console.error('Error fetching user ID:', error);
+          setState(prev => ({
+            ...prev,
+            error: 'Failed to fetch user ID. Please try again later.'
+          }));
+        }
+      }
     };
 
-    window.addEventListener("resize", handleResize);
-    handleResize();
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    fetchUserId();
+  }, [session?.user?.email]);
 
-  // ✅ Fetch Jobs from API
-  const fetchJobs = useCallback(async () => {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/jobs?page=${state.page}&limit=10`
-      );
-      const data = await response.json();
-
-      const jobs: Job[] = data.jobs || [];
-
-      setState((prev) => ({
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setState(prev => ({
         ...prev,
-        jobs,
-        totalPages: data.total_pages || 1,
-        loading: false,
+        file: e.target.files![0],
+        error: null,
+        success: false,
       }));
-    } catch (error) {
-      console.error("Error fetching jobs:", error);
-    }
-  }, [state.page]);
-
-  useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
-
-  // ✅ Handle Page Change for Pagination
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= state.totalPages) {
-      setState((prev) => ({ ...prev, page: newPage }));
     }
   };
 
-  return (
-    <div className="min-h-screen pt-16">
-      {/* Mobile View: Show only Job Details when a job is selected */}
-      {state.isMobileView && state.selectedJob ? (
-        <div className="p-4">
-          <Button onClick={() => setState({ ...state, selectedJob: null })} variant="outline" className="mb-4">
-            ← Back to Jobs
-          </Button>
-          <JobDetails job={state.selectedJob} />
-        </div>
-      ) : (
-        <div className="grid md:grid-cols-[2fr,3fr] min-h-screen">
-          {/* Job List */}
-          <div className="border-r">
-            {state.jobs.map((job) => (
-              <JobCard 
-                key={job.id} 
-                job={job} 
-                isSelected={state.selectedJob?.id === job.id} 
-                onSelect={() => setState({ ...state, selectedJob: job })} 
-              />
-            ))}
+  const handleUpload = async () => {
+    if (!state.file) {
+      setState(prev => ({ ...prev, error: "Please select a file to upload" }));
+      return;
+    }
 
-            {/* Pagination Controls */}
-            <div className="flex justify-between items-center p-4 border-t">
-              <Button 
-                onClick={() => handlePageChange(state.page - 1)} 
-                disabled={state.page === 1} 
-                variant="outline" 
-                className="w-28"
-              >
-                Previous
-              </Button>
-              <Badge variant="secondary" className="px-3 py-1">
-                Page {state.page} of {state.totalPages}
-              </Badge>
-              <Button 
-                onClick={() => handlePageChange(state.page + 1)} 
-                disabled={state.page >= state.totalPages} 
-                className="w-28"
-              >
-                Next
-              </Button>
+    if (!state.userId) {
+      setState(prev => ({ ...prev, error: "User ID not found. Please try again later." }));
+      return;
+    }
+
+    setState(prev => ({ ...prev, isUploading: true, error: null }));
+
+    try {
+      const formData = new FormData();
+      formData.append('file', state.file);
+      formData.append('user_id', state.userId);
+      formData.append('is_primary', 'false');
+
+      const response = await fetchApi('/resume/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      setState(prev => ({
+        ...prev,
+        success: true,
+        uploadedUrl: response.file_url,
+        file: null,
+      }));
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Failed to upload resume',
+      }));
+    } finally {
+      setState(prev => ({ ...prev, isUploading: false }));
+    }
+  };
+
+  // Show loading state while fetching user ID
+  if (!state.userId && !state.error) {
+    return (
+      <div className="container mx-auto max-w-2xl py-8">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">Loading...</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto max-w-2xl py-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Upload Resume</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* File Upload Area */}
+          <div className="flex items-center justify-center p-6 border-2 border-dashed rounded-lg border-gray-300 bg-gray-50">
+            <div className="space-y-2 text-center">
+              <Upload className="mx-auto h-12 w-12 text-gray-400" />
+              <div className="flex text-sm text-gray-600">
+                <label htmlFor="file-upload" className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
+                  <span>Upload a file</span>
+                  <input
+                    id="file-upload"
+                    name="file-upload"
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleFileChange}
+                  />
+                </label>
+                <p className="pl-1">or drag and drop</p>
+              </div>
+              <p className="text-xs text-gray-500">
+                PDF, DOC, DOCX up to 10MB
+              </p>
             </div>
           </div>
 
-          {/* Job Details (Desktop only) */}
-          <div className="hidden md:block">
-            <JobDetails job={state.selectedJob} />
-          </div>
-        </div>
-      )}
+          {/* Selected File Display */}
+          {state.file && (
+            <div className="flex items-center space-x-2 text-sm">
+              <Upload className="h-4 w-4 text-blue-500" />
+              <span className="font-medium">{state.file.name}</span>
+              <span className="text-gray-500">
+                ({Math.round(state.file.size / 1024)} KB)
+              </span>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {state.error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{state.error}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Success Message */}
+          {state.success && (
+            <Alert className="bg-green-50 text-green-700 border-green-200">
+              <AlertDescription>
+                Resume uploaded successfully!
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Upload Button */}
+          <Button
+            onClick={handleUpload}
+            disabled={!state.file || state.isUploading || !state.userId}
+            className="w-full"
+          >
+            {state.isUploading ? "Uploading..." : "Upload Resume"}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
+import typography from "@tailwindcss/typography";
 
 export default {
     darkMode: ["class"],
@@ -65,8 +67,18 @@ export default {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+  		container: {
+  			center: true,
+  			padding: '2rem',
+  			screens: {
+  				'2xl': '1400px',
+  			},
+  		},
+  		fontFamily: {
+  			josefin: ['var(--font-josefin-sans)'],
+  		},
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate, typography],
 } satisfies Config;

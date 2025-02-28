@@ -6,6 +6,7 @@ import JobDetails from "../../components/ui/JobDetails";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { fetchApi } from '../../lib/api';
+import { Filter, FilterValues } from "../../components/ui/Filter";
 
 // ✅ Define Job Interface
 interface Job {
@@ -19,100 +20,136 @@ interface Job {
   created_at: string;
 }
 
+// Define default filters
+const defaultFilters: FilterValues = {
+  jobType: [],
+  location: '',
+  salaryMin: '0',
+  salaryMax: '0',
+  remote: '',
+  datePosted: '',
+  title: ''
+};
+
 export default function Dashboard() {
   // ✅ Explicitly define state type
-  const [state, setState] = useState<{
-    jobs: Job[];
-    loading: boolean;
-    page: number;
-    totalPages: number;
-    selectedJob: Job | null;
-    isMobileView: boolean;
-  }>({
-    jobs: [],
-    loading: true,
-    page: 1,
-    totalPages: 1,
-    selectedJob: null,
-    isMobileView: false,
-  });
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [page, setPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isMobileView, setIsMobileView] = useState<boolean>(false);
 
+  // ✅ Ensure window check only runs on client
   useEffect(() => {
     const handleResize = () => {
-      setState((prev) => ({
-        ...prev,
-        isMobileView: window.innerWidth < 768,
-      }));
+      if (typeof window !== "undefined") {
+        setIsMobileView(window.innerWidth < 768);
+      }
     };
 
+    handleResize(); // Initial check
     window.addEventListener("resize", handleResize);
-    handleResize();
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  //  Fetch Jobs from API
-  const fetchJobs = useCallback(async () => {
+  // ✅ Fetch Jobs and Set Initial Selection
+  const fetchJobs = useCallback(async (currentPage: number, filters: FilterValues) => {
     try {
-      const data = await fetchApi(`/jobs?page=${state.page}&limit=10`);
+      setLoading(true);
+      const data = await fetchApi(`/jobs?page=${currentPage}&limit=8&${Object.entries(filters).map(([key, value]) => `${key}=${value}`).join('&')}`);
+      setJobs(data.jobs || []);
+      setTotalPages(data.total_pages || 1);
       
-      setState((prev) => ({
-        ...prev,
-        jobs: data.jobs || [],
-        totalPages: data.total_pages || 1,
-        loading: false,
-      }));
+      // Automatically select the first job if none is selected
+      if (!selectedJob && data.jobs && data.jobs.length > 0) {
+        setSelectedJob(data.jobs[0]);
+      }
     } catch (error) {
       console.error("Error fetching jobs:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [state.page]);
+  }, [selectedJob]);
 
+  // ✅ Fetch Jobs on Page Change
   useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+    fetchJobs(page, defaultFilters);
+  }, [page, fetchJobs]);
 
   // ✅ Handle Page Change for Pagination
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= state.totalPages) {
-      setState((prev) => ({ ...prev, page: newPage }));
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
     }
+  };
+
+  const handleFilterChange = (filters: FilterValues) => {
+    // Update your fetchJobs function to include filters
+    console.log("Filters changed:", filters);
+    // You can modify your API call to include these filters
+    fetchJobs(1, filters); // Reset to page 1 when filters change
   };
 
   return (
     <div className="min-h-screen pt-16">
-      {state.isMobileView && state.selectedJob ? (
+      {isMobileView && selectedJob ? (
         <div className="p-4">
-          <Button onClick={() => setState({ ...state, selectedJob: null })} variant="outline" className="mb-4">
+          <Button onClick={() => setSelectedJob(null)} variant="outline" className="mb-4">
             ← Back to Jobs
           </Button>
-          <JobDetails job={state.selectedJob} />
+          <JobDetails job={selectedJob} />
         </div>
       ) : (
         <div className="grid md:grid-cols-[2fr,3fr] min-h-screen">
-          <div className="border-r">
-            {state.jobs.map((job) => (
-              <JobCard 
-                key={job.id} 
-                job={job} 
-                isSelected={state.selectedJob?.id === job.id} 
-                onSelect={() => setState({ ...state, selectedJob: job })} 
-              />
-            ))}
+          <div className="border-r flex flex-col h-[calc(100vh-64px)]">
+            <div className="p-4 border-b">
+              <Filter onFilterChange={handleFilterChange} />
+            </div>
 
-            <div className="flex justify-between items-center p-4 border-t">
-              <Button onClick={() => handlePageChange(state.page - 1)} disabled={state.page === 1} variant="outline" className="w-28">
+            <div className="flex-1 overflow-y-auto">
+              {loading ? (
+                <p className="text-center py-6">Loading jobs...</p>
+              ) : (
+                jobs.map((job) => (
+                  <JobCard 
+                    key={job.id} 
+                    job={job} 
+                    isSelected={selectedJob?.id === job.id} 
+                    onSelect={() => setSelectedJob(job)} 
+                  />
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-between items-center p-4 border-t bg-white">
+              <Button 
+                onClick={() => handlePageChange(page - 1)} 
+                disabled={page === 1} 
+                variant="outline" 
+                className="w-28"
+              >
                 Previous
               </Button>
               <Badge variant="secondary" className="px-3 py-1">
-                Page {state.page} of {state.totalPages}
+                Page {page} of {totalPages}
               </Badge>
-              <Button onClick={() => handlePageChange(state.page + 1)} disabled={state.page >= state.totalPages} className="w-28">
+              <Button 
+                onClick={() => handlePageChange(page + 1)} 
+                disabled={page >= totalPages} 
+                className="w-28"
+              >
                 Next
               </Button>
             </div>
           </div>
 
-          <div className="hidden md:block">
-            <JobDetails job={state.selectedJob} />
+          <div className="hidden md:block h-[calc(100vh-64px)] overflow-y-auto">
+            {selectedJob ? (
+              <JobDetails job={selectedJob} />
+            ) : (
+              <p className="p-6 text-center">Select a job to view details</p>
+            )}
           </div>
         </div>
       )}

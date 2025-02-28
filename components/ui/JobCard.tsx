@@ -24,18 +24,18 @@ interface Job {
   const JobCard: React.FC<JobCardProps> = ({ job, isSelected, onSelect }) => (
   <div 
   onClick={onSelect}
-    className={`cursor-pointer border-b border-gray-200 hover:bg-blue-50 ${
+    className={`cursor-pointer border-b border-gray-200 hover:bg-blue-50 font-josefin ${
       isSelected ? 'bg-blue-50' : 'bg-white'
     }`}
   >
     <div className="p-4">
       <div className="flex justify-between items-start">
         <div className="flex-1">
-        <h3 className="text-lg font-semibold text-black mb-1">
+        <h3 className="text-xl font-semibold text-black mb-1">
             {job.title}
         </h3>
 
-          <div className="space-y-1 text-sm">
+          <div className="space-y-1 text-base">
             <div className="flex items-center text-gray-900">
               <Building2 className="h-4 w-4 mr-1.5 flex-shrink-0" />
               <span className="font-medium">{job.company}</span>
@@ -52,9 +52,21 @@ interface Job {
             )}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Badge variant="secondary">{job.job_type || 'Full-time'}</Badge>
+            {job.job_type && (
+              <Badge 
+                variant="outline" 
+                className="bg-[#fff1ef] text-[#f26749] border-[#ffd4cc] hover:bg-[#ffe4df]"
+              >
+                {job.job_type}
+              </Badge>
+            )}
             {job.remote_working && (
-              <Badge variant="secondary">{job.remote_working}</Badge>
+              <Badge 
+                variant="outline" 
+                className="bg-[#edf5fd] text-[#2b90ed] border-[#cce4fb] hover:bg-[#dcedfc]"
+              >
+                {job.remote_working}
+              </Badge>
             )}
           </div>
           <div className="mt-3 flex items-center text-xs text-gray-500">
