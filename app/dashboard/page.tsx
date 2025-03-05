@@ -39,6 +39,7 @@ export default function Dashboard() {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isMobileView, setIsMobileView] = useState<boolean>(false);
+  const [currentFilters, setCurrentFilters] = useState<FilterValues>(defaultFilters);
 
   // ✅ Ensure window check only runs on client
   useEffect(() => {
@@ -61,8 +62,8 @@ export default function Dashboard() {
       setJobs(data.jobs || []);
       setTotalPages(data.total_pages || 1);
       
-      // Automatically select the first job if none is selected
-      if (!selectedJob && data.jobs && data.jobs.length > 0) {
+      // Automatically select the first job if none is selected and we have jobs
+      if (data.jobs && data.jobs.length > 0 && !selectedJob) {
         setSelectedJob(data.jobs[0]);
       }
     } catch (error) {
@@ -70,12 +71,12 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [selectedJob]);
+  }, []); // Remove selectedJob from dependency array
 
-  // ✅ Fetch Jobs on Page Change
+  // ✅ Fetch Jobs on Page Change or Filter Change
   useEffect(() => {
-    fetchJobs(page, defaultFilters);
-  }, [page, fetchJobs]);
+    fetchJobs(page, currentFilters);
+  }, [page, currentFilters, fetchJobs]);
 
   // ✅ Handle Page Change for Pagination
   const handlePageChange = (newPage: number) => {
@@ -85,10 +86,18 @@ export default function Dashboard() {
   };
 
   const handleFilterChange = (filters: FilterValues) => {
-    // Update your fetchJobs function to include filters
-    console.log("Filters changed:", filters);
-    // You can modify your API call to include these filters
-    fetchJobs(1, filters); // Reset to page 1 when filters change
+    setCurrentFilters(filters);
+    setPage(1); // Reset to page 1 when filters change
+  };
+
+  const handleJobSelect = (job: Job) => {
+    setSelectedJob(job);
+    // Don't reset filters or refetch jobs here
+  };
+
+  const clearFilters = () => {
+    setCurrentFilters(defaultFilters);
+    setPage(1);
   };
 
   return (
@@ -104,21 +113,27 @@ export default function Dashboard() {
         <div className="grid md:grid-cols-[2fr,3fr] min-h-screen">
           <div className="border-r flex flex-col h-[calc(100vh-64px)]">
             <div className="p-4 border-b">
-              <Filter onFilterChange={handleFilterChange} />
+              <Filter 
+                onFilterChange={handleFilterChange} 
+                values={currentFilters}
+                onClearFiltersAction={clearFilters}
+              />
             </div>
 
             <div className="flex-1 overflow-y-auto">
               {loading ? (
                 <p className="text-center py-6">Loading jobs...</p>
-              ) : (
+              ) : jobs.length > 0 ? (
                 jobs.map((job) => (
                   <JobCard 
                     key={job.id} 
                     job={job} 
                     isSelected={selectedJob?.id === job.id} 
-                    onSelect={() => setSelectedJob(job)} 
+                    onSelect={() => handleJobSelect(job)} 
                   />
                 ))
+              ) : (
+                <p className="text-center py-6">No jobs found matching your criteria</p>
               )}
             </div>
 

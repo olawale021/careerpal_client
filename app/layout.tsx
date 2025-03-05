@@ -1,7 +1,12 @@
-import { Josefin_Sans } from 'next/font/google';
-import { SidebarLayout } from '@/components/SidebarLayout';
-import "@/app/globals.css";
 
+import "./globals.css";
+
+import { ClientSideWrapper } from "@/components/ClientSideWrapper";
+
+import { Josefin_Sans } from 'next/font/google';
+
+
+// Configure the font with desired weights
 const josefinSans = Josefin_Sans({
   subsets: ['latin'],
   weight: ['100', '200', '300', '400', '500', '600', '700'],
@@ -20,12 +25,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${josefinSans.variable}`}>
-      <body>
-        <SidebarLayout>
-          {children}
-        </SidebarLayout>
+      <body className="font-noto-serif">
+        <ClientSideWrapper>{children}</ClientSideWrapper>
       </body>
     </html>
   );
 }
-

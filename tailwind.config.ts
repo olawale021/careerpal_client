@@ -77,6 +77,8 @@ export default {
   		},
   		fontFamily: {
   			josefin: ['var(--font-josefin-sans)'],
+  			times: ['Times New Roman', 'serif'],
+  			'noto-serif': ['var(--font-noto-serif)', 'serif'],
   		},
   	}
   },
