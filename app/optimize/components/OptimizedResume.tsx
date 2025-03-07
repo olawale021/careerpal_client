@@ -1,8 +1,9 @@
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, Edit } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ResumeData } from "../types";
+import { ResumeData,  } from "../types";
+import { ResumeEditProvider, useResumeEdit } from "../context/ResumeEditContext";
 import Summary from "./sections/Summary";
 import Skills from "./sections/Skills";
 import WorkExperience from "./sections/WorkExperience";
@@ -12,9 +13,21 @@ import Projects from "./sections/Projects";
 
 interface OptimizedResumeProps {
   response: ResumeData;
-  handleDownloadPdf: () => void;
-  handleScoreAnother: () => void;
+  handleDownloadPdf: (editableResume?: ResumeData) => void;
+  handleScoreAnother?: () => void;
   isPdfGenerating: boolean;
+}
+
+interface OptimizedResumeContentProps {
+  response: ResumeData;
+  handleDownloadPdf: (editableResume?: ResumeData) => void;
+  handleScoreAnother?: () => void;
+  isPdfGenerating: boolean;
+  isEditMode: boolean;
+  setIsEditMode: (value: boolean) => void;
+  activeTab: string;
+  setActiveTab: (value: string) => void;
+  resumeContentRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function OptimizedResume({
@@ -24,8 +37,39 @@ export default function OptimizedResume({
   isPdfGenerating
 }: OptimizedResumeProps) {
   const [activeTab, setActiveTab] = useState<string>("summary");
-  const resumeContentRef = useRef<HTMLDivElement>(null);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const resumeContentRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
+  return (
+    <ResumeEditProvider initialData={response}>
+      <OptimizedResumeContent 
+        response={response}
+        handleDownloadPdf={handleDownloadPdf}
+        handleScoreAnother={handleScoreAnother}
+        isPdfGenerating={isPdfGenerating}
+        isEditMode={isEditMode}
+        setIsEditMode={setIsEditMode}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        resumeContentRef={resumeContentRef}
+      />
+    </ResumeEditProvider>
+  );
+}
+
+function OptimizedResumeContent({
+  response,
+  handleDownloadPdf,
+  handleScoreAnother,
+  isPdfGenerating,
+  isEditMode,
+  setIsEditMode,
+  activeTab,
+  setActiveTab,
+  resumeContentRef
+}: OptimizedResumeContentProps) {
+  const { editableResume } = useResumeEdit();
+  
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="p-4 bg-white border-b flex items-center justify-between">
@@ -35,7 +79,22 @@ export default function OptimizedResume({
         </div>
         <div className="flex space-x-2">
           <Button
-            onClick={handleDownloadPdf}
+            onClick={(e) => {
+              e.preventDefault();
+              setIsEditMode(!isEditMode);
+            }}
+            variant="outline"
+            size="sm"
+            className="text-xs flex items-center"
+          >
+            {isEditMode ? 'View Mode' : 'Edit Mode'}
+            <Edit className="ml-1 h-3 w-3" />
+          </Button>
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+              handleDownloadPdf(editableResume);
+            }}
             variant="outline"
             size="sm"
             className="text-xs flex items-center"
@@ -45,7 +104,10 @@ export default function OptimizedResume({
             <Download className="ml-1 h-3 w-3" />
           </Button>
           <Button
-            onClick={handleScoreAnother}
+            onClick={(e) => {
+              e.preventDefault();
+              if (handleScoreAnother) handleScoreAnother();
+            }}
             variant="outline"
             size="sm"
             className="text-xs"
@@ -72,11 +134,11 @@ export default function OptimizedResume({
             </TabsContent>
             
             <TabsContent value="skills" className="mt-0">
-              <Skills skills={response.skills} />
+              <Skills {...response.skills} isEditMode={isEditMode} />
             </TabsContent>
             
             <TabsContent value="experience" className="mt-0">
-              <WorkExperience workExperience={response.work_experience} />
+              <WorkExperience {...response.work_experience} isEditMode={isEditMode} />
             </TabsContent>
             
             <TabsContent value="education" className="mt-0">
@@ -88,7 +150,7 @@ export default function OptimizedResume({
             </TabsContent>
             
             <TabsContent value="projects" className="mt-0">
-              <Projects projects={response.projects} />
+              <Projects projects={response.projects} isEditMode={isEditMode} />
             </TabsContent>
           </div>
         </Tabs>

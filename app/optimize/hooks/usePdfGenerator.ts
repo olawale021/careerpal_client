@@ -6,12 +6,13 @@ export function usePdfGenerator() {
   const [isPdfGenerating, setIsPdfGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const generatePdf = async (response: ResumeData, resumeResponse: ResumeResponse | null) => {
-    if (!response) return;
+  const generatePdf = async (resumeData: ResumeData, resumeResponse: ResumeResponse | null) => {
+    if (!resumeData) return;
     
     try {
       setIsPdfGenerating(true);
       
+      // Use resumeData (which will be the edited version) for PDF generation
       // Extract contact details from the full response
       const contactDetails = resumeResponse?.contact_details || {};
       const userName = contactDetails.name || "";
@@ -100,7 +101,7 @@ export function usePdfGenerator() {
       yPos += 5;
       
       // SECTION: PROFESSIONAL SUMMARY
-      if (response.summary) {
+      if (resumeData.summary) {
         pdf.setFontSize(14);
         pdf.setTextColor(26, 86, 219); // Blue color for section headers
         pdf.setFont(mainFont, 'bold');
@@ -112,7 +113,7 @@ export function usePdfGenerator() {
         pdf.setFont(mainFont, 'normal');
         
         // Limit summary to 4-5 lines to save space
-        const summaryLines = pdf.splitTextToSize(response.summary, contentWidth);
+        const summaryLines = pdf.splitTextToSize(resumeData.summary, contentWidth);
         const limitedSummary = summaryLines.slice(0, 4);
         pdf.text(limitedSummary, margin, yPos);
         yPos += limitedSummary.length * 4;
@@ -121,7 +122,7 @@ export function usePdfGenerator() {
       }
       
       // SECTION: SKILLS
-      if (response.skills && Object.keys(response.skills).length > 0) {
+      if (resumeData.skills && Object.keys(resumeData.skills).length > 0) {
         pdf.setFontSize(13);
         pdf.setTextColor(26, 86, 219); // Blue color for section headers
         pdf.setFont(mainFont, 'bold');
@@ -130,7 +131,7 @@ export function usePdfGenerator() {
         yPos += 6;
         
         // Process each skill category in a pill format
-        Object.entries(response.skills).forEach(([category, skillList]) => {
+        Object.entries(resumeData.skills).forEach(([category, skillList]) => {
           if (!skillList || !skillList.length) return;
           
           const formattedCategory = category
@@ -178,9 +179,9 @@ export function usePdfGenerator() {
           
           yPos += pillHeight + 4;
           
-          // Add more space between categories
-          if (Object.entries(response.skills || {}).length > 1) {
-            yPos += 2;
+          // Reduce space between categories
+          if (Object.entries(resumeData.skills || {}).length > 1) {
+            yPos += 0; // Removed extra 2mm spacing between categories
           }
         });
         
@@ -188,7 +189,7 @@ export function usePdfGenerator() {
       }
       
       // SECTION: WORK EXPERIENCE
-      if (response.work_experience && response.work_experience.length > 0) {
+      if (resumeData.work_experience && resumeData.work_experience.length > 0) {
         pdf.setFontSize(13);
         pdf.setTextColor(26, 86, 219); // Blue color for section headers
         pdf.setFont(mainFont, 'bold');
@@ -197,7 +198,7 @@ export function usePdfGenerator() {
         yPos += 6;
         
         // Create a light gray background for each job
-        response.work_experience.forEach((exp) => {
+        resumeData.work_experience.forEach((exp) => {
           // Calculate height needed for this job entry
           const titleHeight = 4;
           const companyHeight = 4;
@@ -262,95 +263,18 @@ export function usePdfGenerator() {
         yPos += 4;
       }
       
-      // SECTION: EDUCATION (Compact version)
-      if (response.education && response.education.length > 0) {
-        pdf.setFontSize(13);
-        pdf.setTextColor(26, 86, 219); // Blue color for section headers
-        pdf.setFont(mainFont, 'bold');
-        pdf.text("EDUCATION", margin, yPos);
-        
-        yPos += 8; // Increased spacing after education header
-        
-        response.education.forEach((edu, index) => {
-          // Degree and date on same line
-          pdf.setFontSize(12);
-          pdf.setTextColor(45, 55, 72); // #2d3748
-          pdf.setFont(mainFont, 'bold');
-          pdf.text(edu.degree, margin, yPos);
-          
-          const datesWidth = pdf.getTextWidth(edu.dates);
-          pdf.setFontSize(10);
-          pdf.setFont(mainFont, 'normal');
-          pdf.text(edu.dates, pageWidth - margin - datesWidth, yPos);
-          
-          yPos += 4; // Increased spacing
-          
-          // School and location on same line
-          pdf.setFontSize(10);
-          pdf.setFont(mainFont, 'italic');
-          pdf.text(edu.school, margin, yPos);
-          
-          if (edu.location) {
-            const locationWidth = pdf.getTextWidth(edu.location);
-            pdf.setTextColor(74, 85, 104); // #4a5568
-            pdf.text(edu.location, pageWidth - margin - locationWidth, yPos);
-          }
-          
-          // Add more space between education entries
-          yPos += (index < (response.education?.length || 0) - 1) ? 8 : 6;
-        });
-        
-        yPos += 8; // Increased spacing after education section
-      }
-      
-      // SECTION: CERTIFICATIONS (Compact version)
-      if (response.certifications && response.certifications.length > 0) {
-        pdf.setFontSize(13);
-        pdf.setTextColor(26, 86, 219); // Blue color for section headers
-        pdf.setFont(mainFont, 'bold');
-        pdf.text("CERTIFICATIONS", margin, yPos);
-        
-        yPos += 6; // Increased spacing after certifications header
-        
-        // Display certifications in a single line if possible
-        pdf.setFontSize(10);
-        pdf.setTextColor(45, 55, 72); // #2d3748
-        pdf.setFont(mainFont, 'normal');
-        
-        // Limit to 2-3 certifications
-        const limitedCerts = response.certifications.slice(0, 3);
-        
-        limitedCerts.forEach((cert) => {
-          pdf.text("•", margin, yPos);
-          
-          // Calculate proper indentation for wrapped text
-          const bulletIndent = margin + 4; // Increased indentation
-          const bulletWidth = contentWidth - 4;
-          
-          // Add the certification text with proper wrapping (limit to 1 line)
-          const lines = pdf.splitTextToSize(cert, bulletWidth).slice(0, 1);
-          pdf.text(lines, bulletIndent, yPos);
-          
-          // Move position based on number of lines
-          yPos += 4; // Increased spacing between certification items
-        });
-        
-        yPos += 8; // Increased spacing after certifications section
-      }
-      
-      // SECTION: PROJECTS (Only if space allows)
-      if (response.projects && response.projects.length > 0 && yPos < 270) {
+      // SECTION: PROJECTS - Moved here after work experience
+      if (resumeData.projects && resumeData.projects.length > 0) {
         pdf.setFontSize(13);
         pdf.setTextColor(26, 86, 219); // Blue color for section headers
         pdf.setFont(mainFont, 'bold');
         pdf.text("PROJECTS", margin, yPos);
         
-        yPos += 8; // Increased spacing after projects header
+        yPos += 5; // Reduced from 8mm to 5mm for better spacing
         
-        // Only show 1-2 projects to save space
-        const limitedProjects = response.projects.slice(0, 1);
-        
-        limitedProjects.forEach((project) => {
+        // Use all projects instead of limiting them
+        // const limitedProjects = resumeData.projects.slice(0, 1);
+        resumeData.projects.forEach((project) => {
           // Project title
           pdf.setFontSize(12);
           pdf.setTextColor(45, 55, 72); // #2d3748
@@ -395,6 +319,84 @@ export function usePdfGenerator() {
           
           yPos += 3; // Additional spacing after each project
         });
+        
+        yPos += 4; // Add space after projects section
+      }
+      
+      // SECTION: EDUCATION (Compact version)
+      if (resumeData.education && resumeData.education.length > 0) {
+        pdf.setFontSize(13);
+        pdf.setTextColor(26, 86, 219); // Blue color for section headers
+        pdf.setFont(mainFont, 'bold');
+        pdf.text("EDUCATION", margin, yPos);
+        
+        yPos += 5; // Reduced from 8mm to 5mm for better spacing
+        
+        resumeData.education.forEach((edu, index) => {
+          // Degree and date on same line
+          pdf.setFontSize(12);
+          pdf.setTextColor(45, 55, 72); // #2d3748
+          pdf.setFont(mainFont, 'bold');
+          pdf.text(edu.degree, margin, yPos);
+          
+          const datesWidth = pdf.getTextWidth(edu.dates);
+          pdf.setFontSize(10);
+          pdf.setFont(mainFont, 'normal');
+          pdf.text(edu.dates, pageWidth - margin - datesWidth, yPos);
+          
+          yPos += 4; // Increased spacing
+          
+          // School and location on same line
+          pdf.setFontSize(10);
+          pdf.setFont(mainFont, 'italic');
+          pdf.text(edu.school, margin, yPos);
+          
+          if (edu.location) {
+            const locationWidth = pdf.getTextWidth(edu.location);
+            pdf.setTextColor(74, 85, 104); // #4a5568
+            pdf.text(edu.location, pageWidth - margin - locationWidth, yPos);
+          }
+          
+          // Add more space between education entries
+          yPos += (index < (resumeData.education?.length || 0) - 1) ? 8 : 6;
+        });
+        
+        yPos += 8; // Increased spacing after education section
+      }
+      
+      // SECTION: CERTIFICATIONS (Compact version)
+      if (resumeData.certifications && resumeData.certifications.length > 0) {
+        pdf.setFontSize(13);
+        pdf.setTextColor(26, 86, 219); // Blue color for section headers
+        pdf.setFont(mainFont, 'bold');
+        pdf.text("CERTIFICATIONS", margin, yPos);
+        
+        yPos += 6; // Increased spacing after certifications header
+        
+        // Display certifications in a single line if possible
+        pdf.setFontSize(10);
+        pdf.setTextColor(45, 55, 72); // #2d3748
+        pdf.setFont(mainFont, 'normal');
+        
+        // Limit to 2-3 certifications
+        const limitedCerts = resumeData.certifications.slice(0, 3);
+        
+        limitedCerts.forEach((cert) => {
+          pdf.text("•", margin, yPos);
+          
+          // Calculate proper indentation for wrapped text
+          const bulletIndent = margin + 4; // Increased indentation
+          const bulletWidth = contentWidth - 4;
+          
+          // Add the certification text with proper wrapping (limit to 1 line)
+          const lines = pdf.splitTextToSize(cert, bulletWidth).slice(0, 1);
+          pdf.text(lines, bulletIndent, yPos);
+          
+          // Move position based on number of lines
+          yPos += 4; // Increased spacing between certification items
+        });
+        
+        yPos += 8; // Increased spacing after certifications section
       }
       
       // Download the PDF with preventDefault
