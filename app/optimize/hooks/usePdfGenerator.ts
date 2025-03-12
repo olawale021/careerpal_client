@@ -4,10 +4,11 @@ import { ResumeData, ResumeResponse } from "../types";
 
 export function usePdfGenerator() {
   const [isPdfGenerating, setIsPdfGenerating] = useState<boolean>(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const generatePdf = async (resumeData: ResumeData, resumeResponse: ResumeResponse | null) => {
-    if (!resumeData) return;
+    if (!resumeData) return null; // Return null if no data
     
     try {
       setIsPdfGenerating(true);
@@ -399,16 +400,48 @@ export function usePdfGenerator() {
         yPos += 8; // Increased spacing after certifications section
       }
       
-      // Download the PDF with preventDefault
-      pdf.save(`optimized_resume_${new Date().toISOString().slice(0, 10)}.pdf`);
-      
-      // Return true to indicate successful completion
-      return true;
+      return pdf;
       
     } catch (error) {
       console.error("Error generating PDF:", error);
       setError("Failed to generate PDF. Please try again.");
-      return false;
+      return null;
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  };
+
+  const generatePreview = async (resumeData: ResumeData, resumeResponse: ResumeResponse | null) => {
+    if (!resumeData) return;
+    
+    try {
+      setIsPdfGenerating(true);
+      const pdf = await generatePdf(resumeData, resumeResponse);
+      if (!pdf) throw new Error("Failed to generate PDF");
+      
+      const pdfBlob = pdf.output('blob');
+      const previewUrl = URL.createObjectURL(pdfBlob);
+      setPreviewUrl(previewUrl);
+      return previewUrl;
+    } catch (err) {
+      setError('Failed to generate preview');
+      console.error(err);
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  };
+
+  const downloadPdf = async (resumeData: ResumeData, resumeResponse: ResumeResponse | null) => {
+    if (!resumeData) return;
+    
+    try {
+      setIsPdfGenerating(true);
+      const pdf = await generatePdf(resumeData, resumeResponse);
+      if (!pdf) throw new Error("Failed to generate PDF");
+      pdf.save('optimized-resume.pdf');
+    } catch (err) {
+      setError('Failed to download PDF');
+      console.error(err);
     } finally {
       setIsPdfGenerating(false);
     }
@@ -417,7 +450,9 @@ export function usePdfGenerator() {
   return {
     isPdfGenerating,
     setIsPdfGenerating,
-    error,
-    generatePdf
+    previewUrl,
+    generatePreview,
+    downloadPdf,
+    error
   };
 } 

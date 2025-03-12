@@ -83,7 +83,7 @@ export default function JobDetails() {
     async function fetchJobDetails() {
       try {
         const response = await fetch(
-          `https://cp-v1-gfcvakcrdnd8gsgh.ukwest-01.azurewebsites.net/jobs/${id}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/jobs/${id}`,
           {
             method: "GET",
             headers: {

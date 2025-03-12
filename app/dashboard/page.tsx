@@ -54,7 +54,7 @@ export default function Dashboard() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // ✅ Fetch Jobs and Set Initial Selection
+  // ✅ Fetch Jobs and Set Initial Selection (but only for desktop)
   const fetchJobs = useCallback(async (currentPage: number, filters: FilterValues) => {
     try {
       setLoading(true);
@@ -63,7 +63,8 @@ export default function Dashboard() {
       setTotalPages(data.total_pages || 1);
       
       // Automatically select the first job if none is selected and we have jobs
-      if (data.jobs && data.jobs.length > 0 && !selectedJob) {
+      // BUT ONLY IF we're on desktop view
+      if (data.jobs && data.jobs.length > 0 && !selectedJob && !isMobileView) {
         setSelectedJob(data.jobs[0]);
       }
     } catch (error) {
@@ -71,7 +72,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, []); // Remove selectedJob from dependency array
+  }, [selectedJob, isMobileView]); // Add isMobileView to dependency array
 
   // ✅ Fetch Jobs on Page Change or Filter Change
   useEffect(() => {
@@ -101,10 +102,10 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen pt-16">
+    <div className="min-h-screen pt-4">
       {isMobileView && selectedJob ? (
-        <div className="p-4">
-          <Button onClick={() => setSelectedJob(null)} variant="outline" className="mb-4">
+        <div className="p-2">
+          <Button onClick={() => setSelectedJob(null)} variant="outline" className="mb-2 text-sm py-1 px-3">
             ← Back to Jobs
           </Button>
           <JobDetails job={selectedJob} />
@@ -114,7 +115,7 @@ export default function Dashboard() {
           <div className="border-r flex flex-col h-[calc(100vh-64px)]">
             <div className="p-4 border-b">
               <Filter 
-                onFilterChange={handleFilterChange} 
+                onFilterChange={handleFilterChange}
                 values={currentFilters}
                 onClearFiltersAction={clearFilters}
               />

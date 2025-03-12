@@ -5,22 +5,24 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSession } from "next-auth/react";
+
+
+import { useRouter } from "next/navigation";
 // import { Card, CardContent } from "@/components/ui/card";
+import LandingHeader from "@/components/ui/landing-header";
 
 export default function LandingPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  
+  // Add console log to help debug
+  console.log("Auth status:", status, "Session:", session);
+
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header/Nav */}
-      <header className="py-4 px-4 sm:px-6 lg:px-8 bg-white border-b">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="text-xl font-bold text-blue-600">CareerPal</div>
-          <div className="flex items-center gap-4">
-            <Link href="/pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link>
-            <Link href="/login" className="text-gray-600 hover:text-gray-900">Log in</Link>
-            <Button className="bg-blue-600 hover:bg-blue-700">Start free trial</Button>
-          </div>
-        </div>
-      </header>
+      {/* Use the new header component */}
+      <LandingHeader />
 
       {/* Hero Section with gradient background that fades to white */}
       <section className="relative bg-gradient-to-b from-white via-blue-50 to-white pt-20 pb-32 px-4 sm:px-6 lg:px-8">
@@ -35,8 +37,12 @@ export default function LandingPage() {
               Set up in 10 mins. Back to job hunting by 10:11am.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6">
-                Start free trial
+              <Button 
+                size="lg" 
+                className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6"
+                onClick={() => status === 'authenticated' ? router.push('/dashboard') : router.push('/login')}
+              >
+                {status === 'authenticated' ? 'Go to Dashboard' : 'Start free trial'}
               </Button>
               <Button size="lg" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100 text-lg px-8 py-6">
                 Pricing <ArrowRight className="ml-2 h-5 w-5" />
@@ -74,7 +80,7 @@ export default function LandingPage() {
           </div>
 
           {/* Feature 1 - Resume Builder with gradient */}
-          <div className="relative bg-gradient-to-b from-white via-blue-50 to-white py-12 mb-16">
+          <div className="relative bg-gradient-to-b from-white via-blue-50 to-white py-12 mb-4">
             {/* Feature tag and title - centered */}
             <div className="text-center mb-6">
               <div className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 mb-3">
@@ -124,12 +130,37 @@ export default function LandingPage() {
               </Link>
             </div>
             
+            {/* Client Review Section */}
+            <div className="mt-4 max-w-3xl mx-auto bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-start gap-4">
+                <div className="rounded-full bg-blue-100 p-2">
+                  <Image
+                    src="/avatars/user1.jpg"
+                    alt="Sarah Johnson"
+                    width={48}
+                    height={48}
+                    className="rounded-full"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-semibold text-gray-900">Sarah Johnson</h4>
+                    <span className="text-sm text-gray-500">Software Engineer</span>
+                  </div>
+                  <p className="text-gray-600 italic">
+                    &ldquo;The AI-powered resume builder helped me tailor my resume perfectly for tech roles. 
+                    I landed interviews with top companies within weeks!&rdquo;
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             {/* Decorative gradient overlay */}
             <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent"></div>
           </div>
 
           {/* Feature 2 - Interview Prep with gradient */}
-          <div className="relative bg-gradient-to-b from-white via-blue-50 to-white py-12 mb-16">
+          <div className="relative bg-gradient-to-b from-white via-blue-50 to-white py-12 mb-4">
             {/* Feature tag and title - centered */}
             <div className="text-center mb-6">
               <div className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 mb-3">
@@ -144,7 +175,7 @@ export default function LandingPage() {
             </div>
             
             {/* Large image - full width */}
-            <div className="rounded-lg shadow-xl overflow-hidden border border-gray-200 mb-8 max-w-5xl mx-auto">
+            <div className="rounded-lg shadow-xl overflow-hidden border border-gray-200 mb-4 max-w-5xl mx-auto">
               <Image
                 src="/interview-prep.png"
                 alt="Interview Preparation"
@@ -173,10 +204,35 @@ export default function LandingPage() {
               </div>
             </div>
             
-            <div className="text-center mt-6">
+            <div className="text-center mt-4">
               <Link href="/interview-prep" className="text-green-600 font-medium flex items-center justify-center">
                 Prepare for Interviews <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
+            </div>
+            
+            {/* Client Review Section */}
+            <div className="mt-4 max-w-3xl mx-auto bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-start gap-4">
+                <div className="rounded-full bg-green-100 p-2">
+                  <Image
+                    src="/avatars/user2.jpg"
+                    alt="Michael Chen"
+                    width={48}
+                    height={48}
+                    className="rounded-full"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-semibold text-gray-900">Michael Chen</h4>
+                    <span className="text-sm text-gray-500">Product Manager</span>
+                  </div>
+                  <p className="text-gray-600 italic">
+                    &ldquo;The interview preparation feature is a game-changer. The AI simulations helped me 
+                    practice effectively and build confidence. Highly recommended!&rdquo;
+                  </p>
+                </div>
+              </div>
             </div>
             
             {/* Decorative gradient overlay */}
@@ -199,7 +255,7 @@ export default function LandingPage() {
             </div>
             
             {/* Large image - full width */}
-            <div className="rounded-lg shadow-xl overflow-hidden border border-gray-200 mb-8 max-w-5xl mx-auto">
+            <div className="rounded-lg shadow-xl overflow-hidden border border-gray-200 mb-4 max-w-5xl mx-auto">
               <Image 
                 src="/cover-letter.png"
                 alt="Cover Letter Generator"
@@ -232,6 +288,31 @@ export default function LandingPage() {
               <Link href="/cover-letter" className="text-purple-600 font-medium flex items-center justify-center">
                 Create Cover Letter <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
+            </div>
+            
+            {/* Client Review Section */}
+            <div className="mt-4 max-w-3xl mx-auto bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-start gap-4">
+                <div className="rounded-full bg-purple-100 p-2">
+                  <Image
+                    src="/avatars/user3.jpg"
+                    alt="Emily Rodriguez"
+                    width={48}
+                    height={48}
+                    className="rounded-full"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-semibold text-gray-900">Emily Rodriguez</h4>
+                    <span className="text-sm text-gray-500">Marketing Director</span>
+                  </div>
+                  <p className="text-gray-600 italic">
+                    &ldquo;Creating customized cover letters used to take hours. With CareerPal, I can generate
+                    compelling cover letters in minutes. It&apos;s been invaluable in my job search!&rdquo;
+                  </p>
+                </div>
+              </div>
             </div>
             
             {/* Decorative gradient overlay */}
@@ -271,53 +352,15 @@ export default function LandingPage() {
             Your time as a job seeker is extremely valuable, don&apos;t waste it on formatting resumes or writing cover letters.
             Set job search on autopilot and replace manual work with AI assistance.
           </p>
-          <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6">
-            Start free trial
-            <ArrowRight className="ml-2 h-5 w-5" />
+          <Button 
+            size="lg" 
+            className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6"
+            onClick={() => status === 'authenticated' ? router.push('/dashboard') : router.push('/login')}
+          >
+            {status === 'authenticated' ? 'Go to Dashboard' : 'Start free trial'}
           </Button>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-300 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-4">CareerPal</h3>
-            <p className="text-gray-400">
-              AI-powered career acceleration platform helping job seekers land their dream jobs
-            </p>
-          </div>
-          <div>
-            <h4 className="text-white text-base font-medium mb-4">Product</h4>
-            <ul className="space-y-2">
-              <li><Link href="/resume-builder" className="hover:text-white">Resume Builder</Link></li>
-              <li><Link href="/cover-letter" className="hover:text-white">Cover Letter Generator</Link></li>
-              <li><Link href="/interview-prep" className="hover:text-white">Interview Preparation</Link></li>
-              <li><Link href="/pricing" className="hover:text-white">Pricing</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white text-base font-medium mb-4">Company</h4>
-            <ul className="space-y-2">
-              <li><Link href="/about" className="hover:text-white">About Us</Link></li>
-              <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
-              <li><Link href="/careers" className="hover:text-white">Careers</Link></li>
-              <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white text-base font-medium mb-4">Legal</h4>
-            <ul className="space-y-2">
-              <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
-              <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
-              <li><Link href="/cookies" className="hover:text-white">Cookie Policy</Link></li>
-            </ul>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-gray-800 text-center">
-          <p>© {new Date().getFullYear()} CareerPal. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 }

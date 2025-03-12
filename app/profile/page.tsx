@@ -3,32 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
-  UploadCloud,
-  Trash,
-  CheckCircle,
-  FileText,
-  Download,
+  
   AlertCircle,
   Save,
 } from "lucide-react";
@@ -265,270 +247,208 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 font-josefin">
-      {/* Profile Header with Form */}
-      <Card className="bg-white rounded-xl shadow-sm mb-8">
-        <CardHeader className="p-8">
-          <div className="flex items-start gap-8">
-            <Avatar className="h-24 w-24">
-              <AvatarImage
-                src={session?.user?.image || "/avatar-placeholder.png"}
-                alt={session?.user?.name || "Profile"}
-              />
-              <AvatarFallback className="text-2xl">
-                {session?.user?.name?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1">
-              <CardTitle className="text-3xl mb-6">Personal Information</CardTitle>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Name Fields */}
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-lg">First Name</Label>
-                  <Input
-                    id="firstName"
-                    value={profile.firstName}
-                    onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
-                    className="text-lg py-6"
-                    placeholder="Enter your first name"
+    <div className="min-h-screen bg-gray-50 pb-8">
+      <div className="max-w-3xl mx-auto px-4">
+        {/* Profile Card */}
+        <Card className="mt-4 shadow-sm">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+              {/* Avatar Section */}
+              <div className="flex flex-col items-center">
+                <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
+                  <AvatarImage
+                    src={session?.user?.image || "/avatar-placeholder.png"}
+                    alt={session?.user?.name || "Profile"}
                   />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-lg">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    value={profile.lastName}
-                    onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
-                    className="text-lg py-6"
-                    placeholder="Enter your last name"
-                  />
-                </div>
-
-                {/* Contact Fields */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-lg">Email</Label>
-                  <Input
-                    id="email"
-                    value={session?.user?.email || ""}
-                    disabled
-                    className="text-lg py-6 bg-gray-50"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phoneNumber" className="text-lg">Phone Number</Label>
-                  <Input
-                    id="phoneNumber"
-                    value={profile.phoneNumber}
-                    onChange={(e) => setProfile({ ...profile, phoneNumber: e.target.value })}
-                    className="text-lg py-6"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-
-                {/* Address Fields */}
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="address1" className="text-lg">Address Line 1</Label>
-                  <Input
-                    id="address1"
-                    value={profile.address1}
-                    onChange={(e) => setProfile({ ...profile, address1: e.target.value })}
-                    className="text-lg py-6"
-                    placeholder="Enter your street address"
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="address2" className="text-lg">Address Line 2 (Optional)</Label>
-                  <Input
-                    id="address2"
-                    value={profile.address2}
-                    onChange={(e) => setProfile({ ...profile, address2: e.target.value })}
-                    className="text-lg py-6"
-                    placeholder="Apartment, suite, etc."
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="city" className="text-lg">City</Label>
-                  <Input
-                    id="city"
-                    value={profile.city}
-                    onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-                    className="text-lg py-6"
-                    placeholder="Enter your city"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="county" className="text-lg">County</Label>
-                  <Input
-                    id="county"
-                    value={profile.county}
-                    onChange={(e) => setProfile({ ...profile, county: e.target.value })}
-                    className="text-lg py-6"
-                    placeholder="Enter your county"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="postcode" className="text-lg">Postcode</Label>
-                  <Input
-                    id="postcode"
-                    value={profile.postcode}
-                    onChange={(e) => setProfile({ ...profile, postcode: e.target.value })}
-                    className="text-lg py-6"
-                    placeholder="Enter your postcode"
-                  />
-                </div>
+                  <AvatarFallback className="text-2xl">
+                    {session?.user?.name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
               </div>
 
-              <Button
-                onClick={handleProfileUpdate}
-                disabled={isSaving}
-                className="mt-8 text-lg py-6 px-8"
-              >
-                <Save className="h-5 w-5 mr-2" />
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
+              {/* Form Section */}
+              <div className="flex-1 w-full">
+                <CardTitle className="text-2xl mb-4">Personal Information</CardTitle>
+                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                  {/* Name Fields - Side by side on larger screens */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        value={profile.firstName}
+                        onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
+                        placeholder="Enter your first name"
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        value={profile.lastName}
+                        onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
+                        placeholder="Enter your last name"
+                        className="h-11"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        value={session?.user?.email || ""}
+                        disabled
+                        className="h-11 bg-gray-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phoneNumber">Phone Number</Label>
+                      <Input
+                        id="phoneNumber"
+                        value={profile.phoneNumber}
+                        onChange={(e) => setProfile({ ...profile, phoneNumber: e.target.value })}
+                        placeholder="Enter your phone number"
+                        className="h-11"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Address Fields */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="address1">Address Line 1</Label>
+                      <Input
+                        id="address1"
+                        value={profile.address1}
+                        onChange={(e) => setProfile({ ...profile, address1: e.target.value })}
+                        placeholder="Enter your street address"
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="address2">Address Line 2 (Optional)</Label>
+                      <Input
+                        id="address2"
+                        value={profile.address2}
+                        onChange={(e) => setProfile({ ...profile, address2: e.target.value })}
+                        placeholder="Apartment, suite, etc."
+                        className="h-11"
+                      />
+                    </div>
+                  </div>
+
+                  {/* City, County, Postcode */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        value={profile.city}
+                        onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+                        placeholder="Enter your city"
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="county">County</Label>
+                      <Input
+                        id="county"
+                        value={profile.county}
+                        onChange={(e) => setProfile({ ...profile, county: e.target.value })}
+                        placeholder="Enter your county"
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="postcode">Postcode</Label>
+                      <Input
+                        id="postcode"
+                        value={profile.postcode}
+                        onChange={(e) => setProfile({ ...profile, postcode: e.target.value })}
+                        placeholder="Enter your postcode"
+                        className="h-11"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Save Button */}
+                  <div className="pt-4">
+                    <Button
+                      onClick={handleProfileUpdate}
+                      disabled={isSaving}
+                      className="w-full sm:w-auto h-11"
+                    >
+                      <Save className="h-5 w-5 mr-2" />
+                      {isSaving ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </CardHeader>
-      </Card>
+          </CardHeader>
+        </Card>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-5 w-5" />
-          <AlertTitle className="text-lg">Error</AlertTitle>
-          <AlertDescription className="text-base">{error}</AlertDescription>
-        </Alert>
-      )}
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {/* Resume Management Section */}
-      <Card className="bg-white rounded-xl shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between p-8 border-b">
-          <CardTitle className="text-2xl">Resume Management</CardTitle>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="text-lg px-6 py-5 rounded-lg">
-                <UploadCloud className="h-5 w-5 mr-2" />
-                Upload Resume
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-2xl">Upload Resume</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-6 py-4">
-                <div className="grid gap-2">
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={handleFileChange}
-                    className="block w-full text-lg text-gray-500
-                      file:mr-4 file:py-3 file:px-4
-                      file:rounded-lg file:border-0
-                      file:text-lg file:font-medium
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
-                  />
+        {/* Resume List */}
+        <Card className="mt-4 shadow-sm">
+          <CardHeader>
+            <CardTitle>Resumes</CardTitle>
+            {loading ? (
+              <p>Loading resumes...</p>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <Input type="file" onChange={handleFileChange} />
+                  <Button 
+                    onClick={handleUpload} 
+                    disabled={!file || uploading}
+                    className="mt-2"
+                  >
+                    {uploading ? 'Uploading...' : 'Upload Resume'}
+                  </Button>
                 </div>
-                <Button
-                  onClick={handleUpload}
-                  disabled={!file || uploading}
-                  className="w-full text-lg py-6"
-                >
-                  {uploading ? "Uploading..." : "Upload Resume"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        <CardContent className="p-8">
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="text-lg font-medium">File Name</TableHead>
-                  <TableHead className="text-lg font-medium">Uploaded</TableHead>
-                  <TableHead className="text-lg font-medium">Status</TableHead>
-                  <TableHead className="text-lg font-medium">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-lg text-gray-500">
-                      Loading resumes...
-                    </TableCell>
-                  </TableRow>
-                ) : resumes.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-lg text-gray-500">
-                      No resumes uploaded yet.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  resumes.map((resume) => (
-                    <TableRow key={resume.resume_id}>
-                      <TableCell className="py-4">
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-gray-500" />
-                          <span className="text-lg">{resume.file_name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-lg">
-                        {new Date(resume.uploaded_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {resume.is_primary ? (
-                          <div className="flex items-center gap-2 text-green-600">
-                            <CheckCircle className="h-5 w-5" />
-                            <span className="text-lg">Primary</span>
-                          </div>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="lg"
+                <div className="space-y-2">
+                  {resumes.map((resume) => (
+                    <div key={resume.resume_id} className="flex items-center justify-between">
+                      <span>{resume.file_name}</span>
+                      <div className="space-x-2">
+                        {!resume.is_primary && (
+                          <Button 
                             onClick={() => handleSetPrimary(resume.resume_id)}
-                            className="text-base"
+                            variant="outline"
+                            size="sm"
                           >
                             Set as Primary
                           </Button>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            size="lg"
-                            variant="outline"
-                            onClick={() => window.open(resume.signed_url, "_blank")}
-                            className="p-3"
-                          >
-                            <Download className="h-5 w-5" />
-                          </Button>
-                          <Button
-                            size="lg"
-                            variant="destructive"
-                            onClick={() => handleDelete(resume.resume_id)}
-                            className="p-3"
-                          >
-                            <Trash className="h-5 w-5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                        <Button 
+                          onClick={() => handleDelete(resume.resume_id)}
+                          variant="destructive"
+                          size="sm"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </CardHeader>
+        </Card>
+      </div>
     </div>
   );
 }

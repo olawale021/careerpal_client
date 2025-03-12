@@ -1,8 +1,8 @@
-
 import NextAuth from "next-auth";
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import type { User } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 // Define custom types
 interface ExtendedUser extends User {
@@ -30,6 +30,51 @@ const options: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        try {
+          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+          if (!backendUrl) {
+            console.error("Backend URL not configured");
+            return null;
+          }
+
+          const response = await fetch(`${backendUrl}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
+          });
+
+          if (!response.ok) {
+            return null;
+          }
+
+          const data = await response.json();
+          
+          return {
+            id: data.user_id,
+            name: data.full_name,
+            email: credentials.email,
+            jwt: data.access_token,
+          };
+        } catch (error) {
+          console.error("Credentials login error:", error);
+          return null;
+        }
+      }
+    })
   ],
   callbacks: {
     async signIn({ user }) {
@@ -78,29 +123,24 @@ const options: NextAuthOptions = {
 
     async jwt({ token, user }) {
       if (user) {
-        // Add the custom fields from signIn
-        token.jwt = (user as ExtendedUser).jwt;
-        token.id = (user as ExtendedUser).id;
+        token.id = user.id;
+        // Add any other user properties you want in the token
       }
       return token;
     },
 
     async session({ session, token }) {
-      console.log("Setting session data with ID:", token.id);
-      
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token.id as string,
-          jwt: token.jwt as string,
-        },
-      };
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
     },
   },
   pages: {
-    signIn: '/google/login',  // Custom sign-in page (optional)
-    error: '/auth/error',    // Custom error page (optional)
+    signIn: '/login',
+  },
+  session: {
+    strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",

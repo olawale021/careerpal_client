@@ -9,6 +9,7 @@ interface ResumeUploadFormProps {
   setJobDescription: (description: string) => void;
   isScoring: boolean;
   fileInputRef: React.RefObject<HTMLInputElement>;
+  onSubmit?: (e: React.FormEvent) => void;
 }
 
 export default function ResumeUploadForm({
@@ -17,7 +18,8 @@ export default function ResumeUploadForm({
   jobDescription,
   setJobDescription,
   isScoring,
-  fileInputRef
+  fileInputRef,
+  onSubmit
 }: ResumeUploadFormProps) {
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -26,7 +28,7 @@ export default function ResumeUploadForm({
   };
 
   return (
-    <div>
+    <form onSubmit={onSubmit} className="space-y-4">
       <div className="bg-white rounded-xl shadow-sm p-6 h-min">
         <h2 className="text-xl font-semibold mb-6">Upload Documents</h2>
         
@@ -72,13 +74,13 @@ export default function ResumeUploadForm({
         <div className="mt-6">
           <Button 
             type="submit"
-            disabled={isScoring || !file || !jobDescription}
             className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            disabled={!file || !jobDescription || isScoring}
           >
             {isScoring ? 'Scoring...' : 'Score Resume'}
           </Button>
         </div>
       </div>
-    </div>
+    </form>
   );
 } 

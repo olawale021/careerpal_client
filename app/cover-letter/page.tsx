@@ -11,7 +11,6 @@ import { fetchApi } from "@/lib/api";
 
 export default function CoverLetterGenerator() {
   const [file, setFile] = useState<File | null>(null);
-  const [resumeText, setResumeText] = useState<string>("");
   const [jobDescription, setJobDescription] = useState<string>("");
   const [coverLetter, setCoverLetter] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -23,13 +22,7 @@ export default function CoverLetterGenerator() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       setFile(event.target.files[0]);
-      setResumeText(""); // Clear resume text when file is selected
     }
-  };
-
-  const handleResumeTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setResumeText(event.target.value);
-    setFile(null); // Clear file when resume text is entered
   };
 
   const handleJobDescriptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -42,8 +35,8 @@ export default function CoverLetterGenerator() {
       return;
     }
 
-    if (!file && !resumeText) {
-      setError("Please either upload a resume or enter resume text.");
+    if (!file) {
+      setError("Please upload a resume.");
       return;
     }
 
@@ -53,19 +46,12 @@ export default function CoverLetterGenerator() {
     try {
       const formData = new FormData();
       formData.append("job_description", jobDescription);
-      
-      if (file) {
-        formData.append("resume_file", file);
-      } else if (resumeText) {
-        formData.append("resume_text", resumeText);
-      }
+      formData.append("resume_file", file);
 
       const response = await fetchApi("/cover-letter/generate", {
         method: "POST",
         body: formData,
       });
-
-      console.log("API Response:", response);
 
       if (response?.cover_letter) {
         setCoverLetter(response.cover_letter);
@@ -107,54 +93,30 @@ export default function CoverLetterGenerator() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Resume Information</CardTitle>
+                <CardTitle>Resume Upload</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium mb-2">Upload Resume</p>
-                    <div
-                      className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <div className="flex flex-col items-center">
-                        <FileText className="h-12 w-12 text-gray-400 mb-4" />
-                        <p className="text-sm text-gray-600 mb-1">
-                          {file ? file.name : "Drop your resume here or click to browse"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Accepted formats: PDF, DOC, DOCX
-                        </p>
-                      </div>
-                    </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </div>
-                  
-                  <div className="relative">
-                    <div className="absolute inset-x-0 top-0 flex items-center justify-center">
-                      <div className="bg-white px-4">
-                        <p className="text-sm text-gray-500">OR</p>
-                      </div>
-                      <div className="border-t border-gray-200 absolute w-full top-1/2 -translate-y-1/2 z-[-1]"></div>
-                    </div>
-                    <div className="pt-6">
-                      <p className="text-sm font-medium mb-2">Paste Resume Text</p>
-                      <Textarea
-                        placeholder="Paste your resume content here..."
-                        className="min-h-[200px]"
-                        value={resumeText}
-                        onChange={handleResumeTextChange}
-                        disabled={!!file}
-                      />
-                    </div>
+                <div
+                  className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="flex flex-col items-center">
+                    <FileText className="h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-sm text-gray-600 mb-1">
+                      {file ? file.name : "Drop your resume here or click to browse"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Accepted formats: PDF, DOC, DOCX
+                    </p>
                   </div>
                 </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
               </CardContent>
             </Card>
             

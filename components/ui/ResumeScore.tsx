@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, AlertCircle, Star, Upload, ExternalLink, X, Check } from "lucide-react";
+import { FileText, AlertCircle, Star, Upload, ExternalLink, X, Check, ChevronDown, Loader } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { fetchApi } from "@/lib/api";
@@ -30,6 +30,20 @@ interface ResumeScoreProps {
   jobTitle?: string;
 }
 
+// Define the component props interface
+interface MobileResumeScorerProps {
+  resumes: Resume[];
+  selectedResumeId: string | null;
+  handleResumeSelect: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  file: File | null;
+  setFile: React.Dispatch<React.SetStateAction<File | null>>;
+  isLoading: boolean;
+  scoreResume: () => void;
+  jobDescription: string | undefined;
+}
+
 const ResumeScore: React.FC<ResumeScoreProps> = ({ jobDescription, resumeId }) => {
   const { data: session } = useSession();
   const [file, setFile] = useState<File | null>(null);
@@ -39,6 +53,10 @@ const ResumeScore: React.FC<ResumeScoreProps> = ({ jobDescription, resumeId }) =
   const [userId, setUserId] = useState<string | null>(null);
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(resumeId || null);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Add this line to create the file input reference
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch User ID
   const fetchUserId = useCallback(async () => {
@@ -189,106 +207,123 @@ const ResumeScore: React.FC<ResumeScoreProps> = ({ jobDescription, resumeId }) =
 
   // Get text label based on score
 
+  // Add this state to detect mobile view
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   return (
-    <Card className="mt-6 border rounded-lg">
+    <Card className={`mt-3 ${isMobile ? 'border-0 shadow-none' : 'border rounded-lg'}`}>
       <CardContent className="p-0">
-        {/* Header */}
-        <div className="p-4 bg-white border-b flex items-center space-x-2">
-          <FileText className="h-5 w-5 text-gray-600" />
-          <h2 className="text-lg font-semibold">Resume Match Score</h2>
-        </div>
-
         {!scoreResult ? (
-          <div className="p-6">
-            {/* Resume Selection & Upload in one line */}
-            <div className="flex items-center gap-3">
-              <div className="flex-grow">
-                <select
-                  className="w-full p-2.5 bg-white border border-gray-300 text-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
-                  value={selectedResumeId || ""}
-                  onChange={handleResumeSelect}
-                  style={{ 
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 0.5rem center',
-                    backgroundSize: '1.5em 1.5em',
-                    paddingRight: '2.5rem'
-                  }}
-                >
-                  <option value="">Select a resume</option>
-                  {resumes.map((resume) => (
-                    <option key={resume.resume_id} value={resume.resume_id}>
-                      {resume.file_name} - {formatDate(resume.uploaded_at)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <span className="text-gray-400">or</span>
-              
-              <div>
-                <label htmlFor="file-upload" className="cursor-pointer flex items-center text-blue-600 hover:text-blue-500 text-sm">
-                  <Upload className="h-4 w-4 mr-1" />
-                  <span>Upload resume</span>
-                  <input
-                    id="file-upload"
-                    name="file-upload"
-                    type="file"
-                    className="sr-only"
-                    accept=".pdf,.doc,.docx"
-                    onChange={handleFileChange}
-                  />
-                </label>
-                <span className="text-xs text-gray-500 block mt-1">PDF, DOC up to 10MB</span>
-              </div>
-            </div>
-
-            {/* Selected File Info */}
-            {(file || selectedResumeId) && (
-              <div className="mt-4 flex items-center p-3 bg-gray-50 border border-gray-200 rounded-md">
-                <FileText className="h-5 w-5 text-blue-500 mr-2" />
-                <div className="text-sm font-medium text-gray-700 truncate flex-1">
-                  {getSelectedResumeName()}
+          isMobile ? (
+            <MobileResumeScorer 
+              resumes={resumes}
+              selectedResumeId={selectedResumeId}
+              handleResumeSelect={handleResumeSelect}
+              fileInputRef={fileInputRef}
+              handleFileChange={handleFileChange}
+              file={file}
+              setFile={setFile}
+              isLoading={isLoading}
+              scoreResume={scoreResume}
+              jobDescription={jobDescription}
+            />
+          ) : (
+            <div className="p-6">
+              {/* Resume Selection & Upload in one line */}
+              <div className="flex items-center gap-3">
+                <div className="flex-grow">
+                  <select
+                    className="w-full p-2.5 bg-white border border-gray-300 text-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    value={selectedResumeId || ""}
+                    onChange={handleResumeSelect}
+                    style={{ 
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 0.5rem center',
+                      backgroundSize: '1.5em 1.5em',
+                      paddingRight: '2.5rem'
+                    }}
+                  >
+                    <option value="">Select a resume</option>
+                    {resumes.map((resume) => (
+                      <option key={resume.resume_id} value={resume.resume_id}>
+                        {resume.file_name} - {formatDate(resume.uploaded_at)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFile(null);
-                    setSelectedResumeId(null);
-                  }}
-                  className="ml-2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                
+                <span className="text-gray-400">or</span>
+                
+                <div>
+                  <label htmlFor="file-upload" className="cursor-pointer flex items-center text-blue-600 hover:text-blue-500 text-sm">
+                    <Upload className="h-4 w-4 mr-1" />
+                    <span>Upload resume</span>
+                    <input
+                      id="file-upload"
+                      name="file-upload"
+                      type="file"
+                      className="sr-only"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                  <span className="text-xs text-gray-500 block mt-1">PDF, DOC up to 10MB</span>
+                </div>
               </div>
-            )}
 
-            {/* Error Message */}
-            {error && (
-              <Alert variant="destructive" className="mt-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+              {/* Selected File Info */}
+              {(file || selectedResumeId) && (
+                <div className="mt-4 flex items-center p-3 bg-gray-50 border border-gray-200 rounded-md">
+                  <FileText className="h-5 w-5 text-blue-500 mr-2" />
+                  <div className="text-sm font-medium text-gray-700 truncate flex-1">
+                    {getSelectedResumeName()}
+                  </div>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFile(null);
+                      setSelectedResumeId(null);
+                    }}
+                    className="ml-2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
 
-            {/* Score Button */}
-            <Button 
-              onClick={scoreResume} 
-              disabled={isLoading || !jobDescription || (!selectedResumeId && !file)} 
-              className="w-full mt-4 bg-black text-white font-medium py-2.5 px-4 rounded hover:bg-gray-800 transition-colors"
-            >
-              {isLoading ? "Analyzing Resume..." : "Score Resume"}
-            </Button>
-            
-            {!jobDescription && (
-              <p className="mt-2 text-sm text-amber-600">
-                Select a job to enable resume scoring
-              </p>
-            )}
-          </div>
+              {/* Error Message */}
+              {error && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Score Button */}
+              <Button 
+                onClick={scoreResume} 
+                disabled={isLoading || !jobDescription || (!selectedResumeId && !file)} 
+                className="w-full mt-4 bg-black text-white font-medium py-2.5 px-4 rounded hover:bg-gray-800 transition-colors"
+              >
+                {isLoading ? "Analyzing Resume..." : "Score Resume"}
+              </Button>
+              
+              {!jobDescription && (
+                <p className="mt-2 text-sm text-amber-600">
+                  Select a job to enable resume scoring
+                </p>
+              )}
+            </div>
+          )
         ) : (
-          <div className="p-6">
+          <div className={`${isMobile ? 'p-3' : 'p-6'}`}>
             {/* Modern Circular Score Gauge */}
             <div className="flex flex-col items-center justify-center mb-6">
               <div className="relative w-48 h-48">
@@ -518,6 +553,106 @@ const ResumeScore: React.FC<ResumeScoreProps> = ({ jobDescription, resumeId }) =
         )}
       </CardContent>
     </Card>
+  );
+};
+
+const MobileResumeScorer: React.FC<MobileResumeScorerProps> = ({
+  resumes,
+  selectedResumeId,
+  handleResumeSelect,
+  fileInputRef,
+  handleFileChange,
+  file,
+  setFile,
+  isLoading,
+  scoreResume,
+  jobDescription
+}) => {
+  return (
+    <div className="px-2 py-3">
+      <div className="flex items-center mb-3">
+        <FileText className="h-5 w-5 text-gray-600 mr-2" />
+        <h2 className="text-base font-semibold">Resume Match Score</h2>
+      </div>
+      
+      <div className="bg-gray-50 rounded-lg p-3 mb-3">
+        <div className="flex flex-col gap-2">
+          {/* Resume selection dropdown */}
+          <div className="relative w-full">
+            <select
+              id="mobile-resume-select"
+              className="w-full p-2.5 bg-white border border-gray-300 text-gray-700 rounded-md appearance-none pr-8"
+              value={selectedResumeId || ""}
+              onChange={handleResumeSelect}
+            >
+              <option value="">Select a resume</option>
+              {resumes.map((resume) => (
+                <option key={resume.resume_id} value={resume.resume_id}>
+                  {resume.file_name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+          </div>
+          
+          {/* Upload option */}
+          <div className="relative">
+            <Button 
+              variant="outline"
+              className="w-full p-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Resume
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
+        </div>
+        
+        {/* Show selected file */}
+        {file && (
+          <div className="mt-2 flex items-center bg-white p-2 rounded border">
+            <FileText className="h-4 w-4 text-blue-500 mr-2" />
+            <span className="text-xs text-gray-700 truncate flex-1">{file.name}</span>
+            <button 
+              className="text-gray-500 hover:text-red-500"
+              onClick={() => {
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                setFile(null);
+              }}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
+      
+      {/* Score button */}
+      <Button 
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          scoreResume();
+        }}
+        disabled={isLoading || !jobDescription || (!selectedResumeId && !file)} 
+        className="w-full py-2 bg-black text-white font-medium rounded-md"
+      >
+        {isLoading ? (
+          <>
+            <Loader className="h-4 w-4 mr-2 animate-spin" />
+            Analyzing...
+          </>
+        ) : (
+          "Score Resume"
+        )}
+      </Button>
+    </div>
   );
 };
 

@@ -1,0 +1,155 @@
+.mobileJobDetails {
+  --mobile-title-size: 1.5rem;
+  --mobile-text-size: 0.9rem;
+  --mobile-badge-size: 0.75rem;
+  --mobile-spacing: 0.5rem;
+}
+
+.mobileJobDetails .cardHeader {
+  padding: 0.75rem;
+}
+
+.mobileJobDetails .title {
+  font-size: var(--mobile-title-size);
+  line-height: 1.2;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.mobileJobDetails .metaItem {
+  font-size: var(--mobile-text-size);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.mobileJobDetails .badge {
+  font-size: var(--mobile-badge-size);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.mobileJobDetails .applyButton {
+  width: 100%;
+  font-size: 0.95rem;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.mobileJobDetails .sectionTitle {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.mobileJobDetails .description {
+  font-size: var(--mobile-text-size);
+  line-height: 1.7;
+  padding: 0.5rem;
+  color: #333;
+}
+
+.mobileJobDetails .formattedDescription {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0 0.5rem 1rem 0.5rem;
+}
+
+.mobileJobDetails .paragraphBreak {
+  margin-bottom: 1rem;
+}
+
+.mobileJobDetails .requirementsList {
+  padding-left: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.mobileJobDetails .requirementsList::before {
+  content: "•";
+  display: inline-block;
+  width: 1rem;
+  margin-left: -1rem;
+}
+
+.mobileJobDetails .sectionHeading {
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 1rem 0 0.5rem;
+  color: #111;
+}
+
+.mobileJobDetails .metaRow {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+}
+
+.mobileJobDetails .separator {
+  margin: 0.75rem 0;
+}
+
+.mobileJobDetails h1,
+.mobileJobDetails h2 {
+  font-size: 1.75rem !important;
+  line-height: 1.2;
+}
+
+.mobileJobDetails h3 {
+  font-size: 1.25rem !important;
+}
+
+.mobileJobDetails p, 
+.mobileJobDetails span,
+.mobileJobDetails div {
+  font-size: 0.9rem !important;
+}
+
+.mobileJobDetails button {
+  font-size: 0.9rem !important;
+  padding: 0.5rem 1rem !important;
+}
+
+.mobileJobDetails button[aria-label="Back to Jobs"] {
+  font-size: 0.85rem !important;
+  padding: 0.4rem 0.8rem !important;
+}
+
+.mobileJobDetails a[href*="Apply"] {
+  font-size: 1rem !important;
+  padding: 0.75rem !important;
+}
+
+.mobileJobDetails [class*="badge"] {
+  font-size: 0.8rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+.mobileJobDetails .detectedHeading {
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 1.25rem 0 0.5rem;
+  color: #111;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #eee;
+}
+
+.mobileJobDetails .listItem {
+  padding-left: 1.25rem;
+  position: relative;
+  margin-bottom: 0.75rem;
+}
+
+.mobileJobDetails .listItem::before {
+  content: "•";
+  position: absolute;
+  left: 0.25rem;
+  color: #2b90ed;
+}
+
+.mobileJobDetails .textParagraph {
+  margin-bottom: 1rem;
+}

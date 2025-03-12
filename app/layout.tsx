@@ -1,7 +1,8 @@
-
 import "./globals.css";
 
 import { ClientSideWrapper } from "@/components/ClientSideWrapper";
+import { AuthProvider } from "@/app/context/AuthContext";
+import Provider from "@/components/providers/SessionProvider";
 
 import { Josefin_Sans } from 'next/font/google';
 
@@ -26,7 +27,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${josefinSans.variable}`}>
       <body className="font-noto-serif">
-        <ClientSideWrapper>{children}</ClientSideWrapper>
+        <Provider>
+          <AuthProvider>
+            {/* Use only one sidebar-containing component */}
+            <ClientSideWrapper>{children}</ClientSideWrapper>
+          </AuthProvider>
+        </Provider>
       </body>
     </html>
   );
