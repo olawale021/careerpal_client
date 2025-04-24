@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Upload, AlertCircle } from "lucide-react";
 import { fetchApi } from "@/lib/api";
+import { AlertCircle, Upload } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+
+interface UserResponse {
+  user_id: string;
+  [key: string]: string | number | boolean | null | undefined;
+}
+
+interface UploadResponse {
+  file_url: string;
+  [key: string]: string | number | boolean | null | undefined;
+}
 
 interface UploadState {
   file: File | null;
@@ -34,7 +44,7 @@ export default function UploadPage() {
     const fetchUserId = async () => {
       if (session?.user?.email) {
         try {
-          const response = await fetchApi(`/users/lookup/email?email=${encodeURIComponent(session.user.email)}`);
+          const response = await fetchApi(`/users/lookup/email?email=${encodeURIComponent(session.user.email)}`) as UserResponse;
           if (!response.user_id) {
             throw new Error('User ID not found in response');
           }
@@ -85,7 +95,7 @@ export default function UploadPage() {
       const response = await fetchApi('/resume/upload', {
         method: 'POST',
         body: formData,
-      });
+      }) as UploadResponse;
 
       setState(prev => ({
         ...prev,

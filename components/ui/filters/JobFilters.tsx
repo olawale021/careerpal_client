@@ -5,32 +5,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
-    Sheet,
-    SheetContent,
-    SheetFooter,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
 import {
-    DATE_POSTED_OPTIONS,
-    FilterProps,
-    FilterValues,
-    JOB_TYPES,
-    REMOTE_OPTIONS
+  DATE_POSTED_OPTIONS,
+  FilterProps,
+  FilterValues,
+  JOB_TYPES,
+  REMOTE_OPTIONS
 } from "./";
 
-export function JobFilters({ onFilterChange, values, onClearFiltersAction }: FilterProps) {
+function JobFilters({ onFilterChange, values, onClearFiltersAction }: FilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterValues>(values);
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>(values.jobType);
@@ -254,4 +254,4 @@ export function JobFilters({ onFilterChange, values, onClearFiltersAction }: Fil
   );
 }
 
-export { JobFilters };
+export default JobFilters;
