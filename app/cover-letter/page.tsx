@@ -1,13 +1,20 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { FileText, Send, Download, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Textarea } from "@/components/ui/textarea";
 import { fetchApi } from "@/lib/api";
+import { Download, FileText, Loader2, Send } from "lucide-react";
+import React, { useRef, useState } from "react";
+
+// Define type for API response
+interface CoverLetterResponse {
+  cover_letter: string;
+  // Add any other known fields, or make it a record of unknown fields
+  [key: string]: string | number | boolean | null | undefined;
+}
 
 export default function CoverLetterGenerator() {
   const [file, setFile] = useState<File | null>(null);
@@ -51,7 +58,7 @@ export default function CoverLetterGenerator() {
       const response = await fetchApi("/cover-letter/generate", {
         method: "POST",
         body: formData,
-      });
+      }) as CoverLetterResponse;
 
       if (response?.cover_letter) {
         setCoverLetter(response.cover_letter);
