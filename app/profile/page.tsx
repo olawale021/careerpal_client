@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useSession } from "next-auth/react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useApi } from "@/hooks/use-api";
 import {
-  
   AlertCircle,
-  Save,
+  Save
 } from "lucide-react";
-import { fetchApi } from "@/lib/api";
 
 interface UserProfile {
   firstName: string;
@@ -35,12 +34,18 @@ interface Resume {
   signed_url: string;
 }
 
+interface UserIdResponse {
+  user_id: string;
+}
+
+interface ResumesResponse {
+  resumes: Resume[];
+}
+
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile>({
@@ -53,73 +58,85 @@ export default function ProfilePage() {
     postcode: "",
     county: "",
   });
-  const [isSaving, setIsSaving] = useState(false);
+
+  // API hooks
+  const userIdApi = useApi<UserIdResponse>();
+  const resumesApi = useApi<ResumesResponse>();
+  const uploadApi = useApi();
+  const setPrimaryApi = useApi();
+  const deleteResumeApi = useApi();
+  const updateProfileApi = useApi();
+
+  // Loading states
+  const isLoading = userIdApi.loading || resumesApi.loading;
+  const isUploading = uploadApi.loading;
+  const isSaving = updateProfileApi.loading;
 
   // Memoize fetchResumes to prevent unnecessary recreations
   const fetchResumes = useCallback(async (user_id: string) => {
     try {
-      setLoading(true);
-      setError(null);
-  
-      const data = await fetchApi(`/resume/get-resumes?user_id=${user_id}`, {  //  Append `user_id` in query params
+      const data = await resumesApi.fetch(`/resume/get-resumes`, {
+        method: 'get',
+        params: { user_id },
         headers: {
           Authorization: `Bearer ${session?.user?.jwt}`,
         },
       });
-  
+
       console.log("Resumes fetched:", data);
       setResumes(data.resumes);
     } catch (err) {
-      setError("Failed to load resumes");
       console.error("Resume fetch error:", err);
-    } finally {
-      setLoading(false);
     }
-  }, [session?.user?.jwt]);
-  
-  
+  }, [session?.user?.jwt, resumesApi]);
 
   // Memoize fetchUserIdAndResumes to prevent unnecessary recreations
   const fetchUserIdAndResumes = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-  
-      console.log("Fetching user ID for:", session?.user?.email);
-  
-      const data = await fetchApi(`/users/lookup/email?email=${encodeURIComponent(session?.user?.email || '')}`, {
+      if (!session?.user?.email) return;
+      console.log("Fetching user ID for:", session.user.email);
+
+      const data = await userIdApi.fetch(`/users/lookup/email`, {
+        method: 'get',
+        params: { email: session.user.email },
         headers: {
-          Authorization: `Bearer ${session?.user?.jwt}`,
+          Authorization: `Bearer ${session.user.jwt}`,
         },
       });
-  
+
       console.log("User ID fetched:", data);
-  
+
       if (!data.user_id) {
         throw new Error("User ID not found");
       }
-  
+
       setUserId(data.user_id);
       await fetchResumes(data.user_id);
     } catch (err) {
-      setError("Failed to load user data");
       console.error("Error:", err);
-    } finally {
-      setLoading(false);
     }
-  }, [session?.user?.email, session?.user?.jwt, fetchResumes]);
-  
-  
+  }, [session?.user?.email, session?.user?.jwt, userIdApi, fetchResumes]);
+
   // Update useEffect to include all dependencies
   useEffect(() => {
     if (status === "loading") return;
     if (!session?.user?.email) {
       setError("Authentication required");
-      setLoading(false);
       return;
     }
     fetchUserIdAndResumes();
   }, [session?.user?.email, status, fetchUserIdAndResumes]);
+
+  // Error handling from API hooks
+  useEffect(() => {
+    if (userIdApi.error) {
+      setError("Failed to load user data");
+    } else if (resumesApi.error) {
+      setError("Failed to load resumes");
+    } else {
+      setError(null);
+    }
+  }, [userIdApi.error, resumesApi.error]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -132,22 +149,24 @@ export default function ProfilePage() {
     if (!file || !userId) return;
 
     try {
-      setUploading(true);
-      setError(null);
-
       const formData = new FormData();
       formData.append("file", file);
       formData.append("user_id", userId);
       formData.append("is_primary", "false");
 
+      await uploadApi.fetch(`/api/proxy`, {
+        method: 'post',
+        params: { path: '/resume/upload' },
+        data: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       await fetchResumes(userId);
       setFile(null);
     } catch (err) {
-      setError("Failed to upload resume");
       console.error("Upload error:", err);
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -155,26 +174,19 @@ export default function ProfilePage() {
     if (!userId) return;
 
     try {
-      setError(null);
-      const response = await fetchApi(`/resume/set-primary`, {
-        method: "POST",
+      await setPrimaryApi.fetch(`/resume/set-primary`, {
+        method: "post",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${session?.user?.jwt}`,
         },
-        body: JSON.stringify({
+        data: {
           resume_id: resumeId,
           user_id: userId,
-        }),
+        },
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to set primary resume");
-      }
 
       await fetchResumes(userId);
     } catch (err) {
-      setError("Failed to update primary resume");
       console.error("Set primary error:", err);
     }
   };
@@ -183,45 +195,49 @@ export default function ProfilePage() {
     if (!userId) return;
   
     try {
-      setError(null);
-  
-      await fetchApi(`/resume/delete`, {
-        method: "DELETE",
+      await deleteResumeApi.fetch(`/resume/delete`, {
+        method: "delete",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${session?.user?.jwt}`,
         },
-        body: JSON.stringify({
+        data: {
           resume_id: resumeId,
           user_id: userId,
-        }),
+        },
       });
   
       await fetchResumes(userId);
     } catch (err) {
-      setError("Failed to delete resume");
-      console.error("Delete error:", err);
+      console.error("Delete resume error:", err);
     }
-  };  
+  };
 
   const handleProfileUpdate = async () => {
+    if (!userId) return;
+
     try {
-      setIsSaving(true);
-      // Add API call to save profile data
-      await fetchApi('/users/update-profile', {
-        method: 'POST',
+      await updateProfileApi.fetch('/api/proxy', {
+        method: 'post',
+        params: { path: '/users/profile/update' },
+        data: {
+          user_id: userId,
+          ...profile
+        },
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.user?.jwt}`,
         },
-        body: JSON.stringify(profile),
       });
-      // Show success message
-    } catch {
-      setError("Failed to update profile");
-    } finally {
-      setIsSaving(false);
+    } catch (err) {
+      console.error("Profile update error:", err);
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProfile(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   if (status === "loading") {
@@ -277,7 +293,7 @@ export default function ProfilePage() {
                       <Input
                         id="firstName"
                         value={profile.firstName}
-                        onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
+                        onChange={handleInputChange}
                         placeholder="Enter your first name"
                         className="h-11"
                       />
@@ -287,7 +303,7 @@ export default function ProfilePage() {
                       <Input
                         id="lastName"
                         value={profile.lastName}
-                        onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
+                        onChange={handleInputChange}
                         placeholder="Enter your last name"
                         className="h-11"
                       />
@@ -310,7 +326,7 @@ export default function ProfilePage() {
                       <Input
                         id="phoneNumber"
                         value={profile.phoneNumber}
-                        onChange={(e) => setProfile({ ...profile, phoneNumber: e.target.value })}
+                        onChange={handleInputChange}
                         placeholder="Enter your phone number"
                         className="h-11"
                       />
@@ -324,7 +340,7 @@ export default function ProfilePage() {
                       <Input
                         id="address1"
                         value={profile.address1}
-                        onChange={(e) => setProfile({ ...profile, address1: e.target.value })}
+                        onChange={handleInputChange}
                         placeholder="Enter your street address"
                         className="h-11"
                       />
@@ -334,7 +350,7 @@ export default function ProfilePage() {
                       <Input
                         id="address2"
                         value={profile.address2}
-                        onChange={(e) => setProfile({ ...profile, address2: e.target.value })}
+                        onChange={handleInputChange}
                         placeholder="Apartment, suite, etc."
                         className="h-11"
                       />
@@ -348,7 +364,7 @@ export default function ProfilePage() {
                       <Input
                         id="city"
                         value={profile.city}
-                        onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+                        onChange={handleInputChange}
                         placeholder="Enter your city"
                         className="h-11"
                       />
@@ -358,7 +374,7 @@ export default function ProfilePage() {
                       <Input
                         id="county"
                         value={profile.county}
-                        onChange={(e) => setProfile({ ...profile, county: e.target.value })}
+                        onChange={handleInputChange}
                         placeholder="Enter your county"
                         className="h-11"
                       />
@@ -368,7 +384,7 @@ export default function ProfilePage() {
                       <Input
                         id="postcode"
                         value={profile.postcode}
-                        onChange={(e) => setProfile({ ...profile, postcode: e.target.value })}
+                        onChange={handleInputChange}
                         placeholder="Enter your postcode"
                         className="h-11"
                       />
@@ -405,7 +421,7 @@ export default function ProfilePage() {
         <Card className="mt-4 shadow-sm">
           <CardHeader>
             <CardTitle>Resumes</CardTitle>
-            {loading ? (
+            {isLoading ? (
               <p>Loading resumes...</p>
             ) : (
               <>
@@ -413,10 +429,10 @@ export default function ProfilePage() {
                   <Input type="file" onChange={handleFileChange} />
                   <Button 
                     onClick={handleUpload} 
-                    disabled={!file || uploading}
+                    disabled={!file || isUploading}
                     className="mt-2"
                   >
-                    {uploading ? 'Uploading...' : 'Upload Resume'}
+                    {isUploading ? 'Uploading...' : 'Upload Resume'}
                   </Button>
                 </div>
                 <div className="space-y-2">

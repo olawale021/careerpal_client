@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useState, useCallback, useRef } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { FileText, AlertCircle, Star, Upload, ExternalLink, X, Check, ChevronDown, Loader } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { fetchApi } from "@/lib/api";
+import { AlertCircle, Check, ChevronDown, ExternalLink, FileText, Loader, Star, Upload, X } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Types for resume score response
 interface ScoreResponse {
@@ -64,7 +64,7 @@ const ResumeScore: React.FC<ResumeScoreProps> = ({ jobDescription, resumeId }) =
 
     try {
       setError(null);
-      const response = await fetchApi(`/users/lookup/email?email=${encodeURIComponent(session.user.email)}`, {
+      const response = await fetchApi<{ user_id: string }>(`/users/lookup/email?email=${encodeURIComponent(session.user.email)}`, {
         headers: { Authorization: `Bearer ${session?.user?.jwt}` },
       });
 
@@ -85,7 +85,7 @@ const ResumeScore: React.FC<ResumeScoreProps> = ({ jobDescription, resumeId }) =
 
     try {
       setError(null);
-      const response = await fetchApi(`/resume/get-resumes?user_id=${userId}`, {
+      const response = await fetchApi<{ resumes: Resume[] }>(`/resume/get-resumes?user_id=${userId}`, {
         headers: { Authorization: `Bearer ${session?.user?.jwt}` },
       });
 
@@ -127,6 +127,21 @@ const ResumeScore: React.FC<ResumeScoreProps> = ({ jobDescription, resumeId }) =
 
   // Extract keywords from job description
 
+  // Helper function to convert File to Base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        // Remove data URL prefix (e.g., "data:application/pdf;base64,")
+        const base64Data = base64.split(',')[1];
+        resolve(base64Data);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   // Submit resume for scoring
   const scoreResume = async () => {
     if (!jobDescription) {
@@ -143,18 +158,31 @@ const ResumeScore: React.FC<ResumeScoreProps> = ({ jobDescription, resumeId }) =
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("job_description", jobDescription);
-
+      // Prepare request data
+      const requestData: {
+        job_description: string;
+        resume_id?: string;
+        file_content?: string;
+        file_name?: string;
+        file_type?: string;
+      } = { job_description: jobDescription };
+      
       if (selectedResumeId) {
-        formData.append("resume_id", selectedResumeId);
+        requestData.resume_id = selectedResumeId;
       } else if (file) {
-        formData.append("file", file);
+        // Convert file to base64 for JSON submission
+        const fileBase64 = await fileToBase64(file);
+        requestData.file_content = fileBase64;
+        requestData.file_name = file.name;
+        requestData.file_type = file.type;
       }
-
-      const response = await fetchApi("/resume/score", {
+      
+      const response = await fetchApi<{ data: ScoreResponse }>("/resume/score", {
         method: "POST",
-        body: formData,
+        data: requestData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response?.data) {

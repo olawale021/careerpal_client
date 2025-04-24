@@ -1,19 +1,30 @@
 "use client";
 
-import { Menu, Settings } from "lucide-react";
-import Link from "next/link";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
 } from "@/components/ui/sheet";
-import { sidebarNavItems } from "../SidebarLayout";
+import { LogOut, Menu, Settings } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
+import { sidebarNavItems } from "../SidebarLayout";
 
-export function MobileNavigation() {
+interface MobileNavigationProps {
+  onLogout?: () => void;
+}
+
+export function MobileNavigation({ onLogout }: MobileNavigationProps) {
   const [open, setOpen] = useState(false);
+
+  const handleLogout = () => {
+    setOpen(false);
+    if (onLogout) {
+      onLogout();
+    }
+  };
 
   return (
     <div className="sticky top-0 z-50 w-full bg-background border-b md:hidden">
@@ -50,6 +61,14 @@ export function MobileNavigation() {
               ))}
               
               <div className="pt-4 border-t border-gray-700">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center space-x-3 py-2 px-3 mb-3 w-full text-left rounded-lg bg-red-800/20 hover:bg-red-800/30 border border-red-800/30 transition-colors"
+                >
+                  <LogOut className="h-5 w-5 text-red-400" />
+                  <span className="font-medium text-red-100">Logout</span>
+                </button>
+                
                 <Link 
                   href="/settings"
                   onClick={() => setOpen(false)}

@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { Calendar, Briefcase, MapPin, Plus, Trash2 } from "lucide-react";
-import {  Project } from "../../types";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Briefcase, Calendar, MapPin, Plus, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
 import { useResumeEdit } from "../../context/ResumeEditContext";
+import { Project } from "../../types";
 
 interface WorkExperienceProps {
   isEditMode?: boolean;
@@ -15,6 +15,7 @@ export default function WorkExperienceSection({ isEditMode = true }: WorkExperie
   const [editing, setEditing] = useState(false);
   const [activeExpIndex, setActiveExpIndex] = useState<number | null>(null);
   const [bulletEdits, setBulletEdits] = useState<{[key: string]: string}>({});
+  const bulletUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Only use experiences from the editable resume
   const experiences = editableResume.work_experience || [];
@@ -140,16 +141,24 @@ export default function WorkExperienceSection({ isEditMode = true }: WorkExperie
       [editKey]: value
     });
     
-    const updatedExperiences = [...experiences];
-    const bullets = [...updatedExperiences[expIndex].bullets];
-    bullets[bulletIndex] = value;
-    updatedExperiences[expIndex] = {
-      ...updatedExperiences[expIndex],
-      bullets
-    };
+    // Delay the actual update to prevent UI lag
+    // Only update the context after user finishes typing (300ms delay)
+    if (bulletUpdateTimeoutRef.current) {
+      clearTimeout(bulletUpdateTimeoutRef.current);
+    }
     
-    // Call the update function from context
-    updateWorkExperience(expIndex, 'work_experience' as keyof Project, updatedExperiences);
+    bulletUpdateTimeoutRef.current = setTimeout(() => {
+      const updatedExperiences = [...experiences];
+      const bullets = [...updatedExperiences[expIndex].bullets];
+      bullets[bulletIndex] = value;
+      updatedExperiences[expIndex] = {
+        ...updatedExperiences[expIndex],
+        bullets
+      };
+      
+      // Call the update function from context
+      updateWorkExperience(expIndex, 'work_experience' as keyof Project, updatedExperiences);
+    }, 300);
   };
 
   // Function to get the current value of a bullet (either from edits or original)
@@ -162,8 +171,8 @@ export default function WorkExperienceSection({ isEditMode = true }: WorkExperie
   const handleAddBullet = (expIndex: number) => {
     console.log("handleAddBullet called with index:", expIndex);
     
-    // Directly modify the bullets array in the original experiences array
-    const updatedExperiences = [...experiences];
+    // Create a deep copy of the experiences
+    const updatedExperiences = JSON.parse(JSON.stringify(experiences));
     const currentExp = updatedExperiences[expIndex];
     
     // Initialize bullets array if it doesn't exist
@@ -174,21 +183,18 @@ export default function WorkExperienceSection({ isEditMode = true }: WorkExperie
     // Add the new bullet
     currentExp.bullets.push("New bullet point - add your accomplishment here");
     
-    // Force update by directly calling the context update function
+    // Update the context
     updateWorkExperience(expIndex, 'work_experience' as keyof Project, updatedExperiences);
     
-    // Force a complete component re-render with a different approach
-    // This is a workaround to ensure the UI updates
-    setTimeout(() => {
-      // Force the component to re-render
-      setEditing(false);
-      setTimeout(() => {
-        setEditing(true);
-        setActiveExpIndex(expIndex);
-      }, 10);
-    }, 10);
+    // Pre-populate the bullet edit state for the new item to improve responsiveness
+    const newBulletIndex = currentExp.bullets.length - 1;
+    const editKey = `${expIndex}-${newBulletIndex}`;
+    setBulletEdits({
+      ...bulletEdits,
+      [editKey]: "New bullet point - add your accomplishment here"
+    });
     
-    console.log("After update, bullet count should be:", currentExp.bullets.length);
+    console.log("Added new bullet. Total bullets:", currentExp.bullets.length);
   };
   
   // Delete a bullet point
@@ -200,8 +206,8 @@ export default function WorkExperienceSection({ isEditMode = true }: WorkExperie
       return;
     }
     
-    // Directly modify the bullets array in the original experiences array
-    const updatedExperiences = [...experiences];
+    // Create a deep copy of the experiences
+    const updatedExperiences = JSON.parse(JSON.stringify(experiences));
     const currentExp = updatedExperiences[expIndex];
     
     // Remove the bullet
@@ -209,17 +215,25 @@ export default function WorkExperienceSection({ isEditMode = true }: WorkExperie
     
     console.log("After delete, bullets array:", currentExp.bullets);
     
-    // Force update by directly calling the context update function
-    updateWorkExperience(expIndex, 'work_experience' as keyof Project, updatedExperiences);
+    // Remove any edits for this bullet
+    const newBulletEdits = {...bulletEdits};
+    const editKey = `${expIndex}-${bulletIndex}`;
+    delete newBulletEdits[editKey];
     
-    // Force a complete component re-render
-    setTimeout(() => {
-      setEditing(false);
-      setTimeout(() => {
-        setEditing(true);
-        setActiveExpIndex(expIndex);
-      }, 10);
-    }, 10);
+    // Shift the keys for bullets after the deleted one
+    Object.keys(newBulletEdits).forEach(key => {
+      const [expIdx, bulletIdx] = key.split('-').map(Number);
+      if (expIdx === expIndex && bulletIdx > bulletIndex) {
+        // Move edits for bullets after the deleted one to one index earlier
+        delete newBulletEdits[key];
+        newBulletEdits[`${expIdx}-${bulletIdx-1}`] = bulletEdits[key];
+      }
+    });
+    
+    setBulletEdits(newBulletEdits);
+    
+    // Update the context
+    updateWorkExperience(expIndex, 'work_experience' as keyof Project, updatedExperiences);
   };
   
   // Delete an entire work experience
@@ -344,10 +358,14 @@ export default function WorkExperienceSection({ isEditMode = true }: WorkExperie
               )}
             </div>
 
-            <ul className="mt-2 space-y-2">
+            <ul className="mt-2 space-y-3">
               {exp.bullets && exp.bullets.map((bullet, i) => (
-                <li key={`bullet-${index}-${i}-${Date.now()}`} className="flex items-start">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 mt-2 mr-2"></span>
+                <li key={`bullet-${index}-${i}-${Date.now()}`} className="flex items-start group">
+                  {!editing || activeExpIndex !== index ? (
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 mt-2 mr-2 flex-shrink-0"></span>
+                  ) : (
+                    <span className="inline-block h-5 w-5 text-center text-xs font-medium text-gray-500 mr-1 flex-shrink-0">{i+1}.</span>
+                  )}
                   <div className="flex-1">
                     {editing && activeExpIndex === index ? (
                       <div className="flex gap-2 items-start">
@@ -356,11 +374,29 @@ export default function WorkExperienceSection({ isEditMode = true }: WorkExperie
                           onChange={(e) => {
                             console.log("Textarea onChange triggered with value:", e.target.value);
                             handleUpdateBullet(index, i, e.target.value);
+                            
+                            // Auto-resize textarea based on content
+                            const textarea = e.target;
+                            textarea.style.height = "auto";
+                            textarea.style.height = Math.max(60, textarea.scrollHeight) + "px";
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          onFocus={(e) => e.target.select()}
+                          onFocus={(e) => {
+                            // Don't select all text on focus as it can be disruptive
+                            // Only move cursor to end of text
+                            const value = e.target.value;
+                            e.target.value = '';
+                            e.target.value = value;
+                            
+                            // Adjust height on focus
+                            const textarea = e.target;
+                            textarea.style.height = "auto";
+                            textarea.style.height = Math.max(60, textarea.scrollHeight) + "px";
+                          }}
                           autoFocus={i === exp.bullets.length - 1}
-                          className="text-gray-600 min-h-[60px] flex-1"
+                          className="text-gray-600 min-h-[60px] flex-1 p-2 border border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors resize-none overflow-hidden"
+                          placeholder="Enter bullet point..."
+                          spellCheck={true}
                         />
                         <Button
                           variant="ghost"
@@ -371,7 +407,7 @@ export default function WorkExperienceSection({ isEditMode = true }: WorkExperie
                             console.log("Delete bullet button clicked for bullet:", i, "in experience:", index);
                             handleDeleteBullet(index, i);
                           }}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 mt-1"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 mt-1 opacity-90 group-hover:opacity-100"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -384,7 +420,7 @@ export default function WorkExperienceSection({ isEditMode = true }: WorkExperie
               ))}
               
               {editing && activeExpIndex === index && (
-                <li>
+                <li className="ml-7">
                   <Button
                     variant="outline"
                     size="sm"
@@ -394,7 +430,7 @@ export default function WorkExperienceSection({ isEditMode = true }: WorkExperie
                       console.log("Add Bullet Point button clicked for index:", index);
                       handleAddBullet(index);
                     }}
-                    className="mt-2"
+                    className="mt-1"
                   >
                     <Plus className="h-4 w-4 mr-2" /> Add Bullet Point
                   </Button>

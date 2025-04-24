@@ -1,13 +1,13 @@
 "use client";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, DollarSign, Calendar, Building, ExternalLink } from "lucide-react";
+import { Building, Calendar, ChevronDown, ChevronUp, DollarSign, ExternalLink, FileText, MapPin } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { formatDate } from "../../components/ui/utils";
-import ResumeScore from "./ResumeScore";
-import { useEffect, useState } from "react";
 import styles from "./JobDetails.module.css";
+import { ResumeScore } from "./resume";
 
 // ✅ Define Job Interface
 interface Job {
@@ -28,8 +28,22 @@ interface JobDetailsProps {
   job: Job | null;
 }
 
+// Add a helper function to safely format dates
+const safeFormatDate = (dateString?: string) => {
+  if (!dateString) return 'Not specified';
+  try {
+    const formattedDate = formatDate(dateString);
+    return formattedDate !== 'Invalid date' ? formattedDate : 'Not specified';
+  } catch (error) {
+    console.error("Error safely formatting date:", error);
+    return 'Not specified';
+  }
+};
+
 const JobDetails: React.FC<JobDetailsProps> = ({ job }) => {
   const [isMobile, setIsMobile] = useState(false);
+  const [showResumeScore, setShowResumeScore] = useState(false);
+  const [cachedResumeScore, setCachedResumeScore] = useState<React.ReactNode | null>(null);
   
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -37,6 +51,30 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job }) => {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Reset cached resume score when job changes
+  useEffect(() => {
+    setCachedResumeScore(null);
+  }, [job?.id]);
+
+  // Debug logging for job link
+  useEffect(() => {
+    if (job) {
+      console.log("Job details received:", {
+        title: job.title,
+        company: job.company,
+        link: job.link
+      });
+    }
+  }, [job]);
+
+  // Create the resume score component if needed
+  const getResumeScoreComponent = useCallback(() => {
+    if (!cachedResumeScore && job?.description) {
+      setCachedResumeScore(<ResumeScore jobDescription={job.description} />);
+    }
+    return cachedResumeScore;
+  }, [cachedResumeScore, job?.description]);
 
   if (!job) return <p className="p-4 text-gray-500">Select a job to view details</p>;
 
@@ -102,7 +140,7 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job }) => {
                 </div>
                 <div className={styles.metaItem}>
                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>{formatDate(job.created_at)}</span>
+                  <span>{job.created_at ? safeFormatDate(job.created_at) : 'Not specified'}</span>
                 </div>
               </div>
               
@@ -110,18 +148,6 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job }) => {
                 {job.job_type && <span className={`${styles.badge} bg-gray-100`}>{job.job_type}</span>}
                 {job.remote_working && <span className={`${styles.badge} bg-gray-100`}>{job.remote_working}</span>}
               </div>
-              
-              {job.link && (
-                <Button 
-                  className={styles.applyButton}
-                  asChild
-                >
-                  <a href={job.link} target="_blank" rel="noopener noreferrer">
-                    Apply Now
-                    <ExternalLink className="ml-2 h-4 w-4" />
-                  </a>
-                </Button>
-              )}
             </>
           ) : (
             // Desktop layout (unchanged)
@@ -152,29 +178,56 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job }) => {
                   </div>
                   <div className="flex items-center justify-end gap-1">
                     <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <span>{formatDate(job.created_at)}</span>
+                    <span>{job.created_at ? safeFormatDate(job.created_at) : 'Not specified'}</span>
                   </div>
                 </div>
               </div>
-
-              {job.link && (
-                <Button 
-                  className="w-full sm:w-auto text-lg bg-[#2b90ed] hover:bg-[#2477c7] text-white transition-colors" 
-                  asChild
-                >
-                  <a href={job.link} target="_blank" rel="noopener noreferrer">
-                    Apply Now
-                    <ExternalLink className="ml-2 h-5 w-5" />
-                  </a>
-                </Button>
-              )}
             </>
           )}
         </CardHeader>
 
         <CardContent className={isMobile ? "py-2" : "space-y-6"}>
-          {/* Resume Score Component */}
-          <ResumeScore jobDescription={job.description} />
+          {/* Always show Apply Now Button at the top */}
+          <div className="bg-white py-2 mb-4 border-b sticky top-0 z-50 shadow-md">
+            <Button 
+              className="w-full text-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors font-semibold py-6"
+              onClick={() => console.log("Apply button clicked, URL:", job.link)}
+              asChild
+            >
+              <a 
+                href={job.link || `https://www.google.com/search?q=${encodeURIComponent(`${job.title} ${job.company} job application`)}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                Apply Now
+                <ExternalLink className="ml-2 h-5 w-5" />
+              </a>
+            </Button>
+          </div>
+          
+          {/* Resume Score Component with toggle */}
+          <div className="border rounded-lg overflow-hidden mb-6">
+            <button 
+              onClick={() => setShowResumeScore(!showResumeScore)}
+              className="w-full flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center">
+                <FileText className="h-5 w-5 text-blue-600 mr-2" />
+                <span className="font-medium text-blue-800">Resume Match Analysis</span>
+              </div>
+              {showResumeScore ? (
+                <ChevronUp className="h-5 w-5 text-blue-600" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-blue-600" />
+              )}
+            </button>
+            
+            {showResumeScore && job.description && (
+              <div className="p-4 bg-white relative min-h-[200px]">
+                {getResumeScoreComponent()}
+              </div>
+            )}
+          </div>
           
           <Separator className={isMobile ? styles.separator : ""} />
 

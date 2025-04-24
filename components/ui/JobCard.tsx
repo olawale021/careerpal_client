@@ -1,7 +1,7 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
-import { Building2, MapPin, DollarSign, Clock, ChevronRight } from "lucide-react";
 import { formatDate } from "@/components/ui/utils";
+import { Building2, ChevronRight, Clock, DollarSign, MapPin } from "lucide-react";
 
 interface Job {
     id: number;
@@ -20,6 +20,16 @@ interface Job {
     onSelect: () => void; // ✅ No need to pass `job` from parent component
   }
   
+  const formatPostedDate = (dateString?: string) => {
+    if (!dateString) return 'Recently posted';
+    try {
+      const formattedDate = formatDate(dateString);
+      return `Posted ${formattedDate !== 'Invalid date' ? formattedDate : 'recently'}`;
+    } catch (error) {
+      console.error("Error formatting posted date:", error);
+      return 'Recently posted';
+    }
+  };
 
   const JobCard: React.FC<JobCardProps> = ({ job, isSelected, onSelect }) => (
   <div 
@@ -71,7 +81,7 @@ interface Job {
           </div>
           <div className="mt-3 flex items-center text-xs text-gray-500">
             <Clock className="h-3 w-3 mr-1" />
-            <span>Posted {formatDate(job.created_at)}</span>
+            <span>{formatPostedDate(job.created_at)}</span>
           </div>
         </div>
         <ChevronRight className="h-5 w-5 text-gray-400 ml-2 flex-shrink-0" />

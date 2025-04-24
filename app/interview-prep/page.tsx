@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { FileText, Send, Loader2, MessageSquare, Info, HelpCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { FileText, HelpCircle, Info, Loader2, MessageSquare, Send } from "lucide-react";
+import React, { useRef, useState } from "react";
 // import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { fetchApi } from "@/lib/api";
@@ -122,17 +122,33 @@ export default function InterviewPrep() {
     setError(null);
 
     try {
+      // Create FormData and log what we're adding
       const formData = new FormData();
       formData.append("job_description", jobDescription);
       formData.append("question_count", questionCount.toString());
+      
+      console.log("Preparing FormData for interview questions:", {
+        job_description_length: jobDescription.length,
+        question_count: questionCount,
+        has_resume: !!file
+      });
       
       if (file) {
         formData.append("resume_file", file);
       }
 
+      // Log entries to verify FormData content
+      for (const pair of formData.entries()) {
+        console.log(`FormData entry: ${pair[0]} = ${pair[0] === 'resume_file' ? '[File]' : pair[1]}`);
+      }
+
       const response = await fetchApi("/interview/questions", {
         method: "POST",
         body: formData,
+        // Ensure no Content-Type is set for FormData
+        headers: {
+          // Content-Type is deliberately omitted to let the browser set it correctly with boundary
+        }
       });
 
       if (response && !response.error) {

@@ -1,6 +1,15 @@
-import React, { ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { FileText, Upload } from "lucide-react";
+import React, { ChangeEvent } from "react";
 
 interface ResumeUploadFormProps {
   file: File | null;
@@ -29,58 +38,80 @@ export default function ResumeUploadForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="bg-white rounded-xl shadow-sm p-6 h-min">
-        <h2 className="text-xl font-semibold mb-6">Upload Documents</h2>
+      <Card className="border-none shadow-md">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xl font-semibold">Upload Documents</CardTitle>
+        </CardHeader>
         
-        {/* Resume Upload */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-2">Resume</label>
-          <div
-            className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <div className="flex flex-col items-center">
-              <FileText className="h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-sm text-gray-600 mb-1">
-                {file ? file.name : "Drop your resume here or click to browse"}
-              </p>
-              <p className="text-xs text-gray-500">
-                Accepted formats: PDF, DOC, DOCX
-              </p>
+        <CardContent className="space-y-6">
+          {/* Resume Upload */}
+          <div>
+            <Label htmlFor="resume-upload" className="text-sm font-medium mb-2">Resume</Label>
+            <div
+              className={cn(
+                "mt-2 border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer",
+                file 
+                  ? "border-green-400 bg-green-50" 
+                  : "border-gray-200 hover:border-blue-400 hover:bg-blue-50"
+              )}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <div className="flex flex-col items-center">
+                {file ? (
+                  <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                    <FileText className="h-6 w-6 text-green-600" />
+                  </div>
+                ) : (
+                  <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                    <Upload className="h-6 w-6 text-blue-600" />
+                  </div>
+                )}
+                <p className="text-sm font-medium mb-1">
+                  {file ? file.name : "Drop your resume here or click to browse"}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Accepted formats: PDF, DOC, DOCX
+                </p>
+              </div>
             </div>
+            <input
+              id="resume-upload"
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={handleFileChange}
+              className="hidden"
+            />
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.doc,.docx"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
 
-        {/* Job Description */}
-        <div>
-          <label className="block text-sm font-medium mb-2">Job Description</label>
-          <textarea 
-            className="w-full h-40 rounded-lg border-gray-200 resize-none focus:ring-2 focus:ring-blue-500 p-3"
-            placeholder="Paste the job description here..."
-            value={jobDescription}
-            onChange={(e) => setJobDescription(e.target.value)}
-            required
-          />
-        </div>
+          {/* Job Description */}
+          <div>
+            <Label htmlFor="job-description" className="text-sm font-medium">Job Description</Label>
+            <Textarea 
+              id="job-description"
+              className="mt-2 min-h-40 resize-none"
+              placeholder="Paste the job description here..."
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              required
+            />
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              For best results, include the complete job description with requirements and responsibilities.
+            </p>
+          </div>
 
-        {/* Action Button */}
-        <div className="mt-6">
+          {/* Action Button */}
           <Button 
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            disabled={!file || !jobDescription || isScoring}
+            className="w-full font-medium"
+            variant="default"
+            size="lg"
+            disabled={!file || !jobDescription.trim() || isScoring}
           >
-            {isScoring ? 'Scoring...' : 'Score Resume'}
+            {isScoring ? 'Scoring Resume...' : 'Score Resume'}
           </Button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </form>
   );
 } 

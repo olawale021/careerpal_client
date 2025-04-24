@@ -1,17 +1,17 @@
-import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, Edit } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ResumeData, ResumeResponse } from "../types";
+import { Download, Edit, Expand, FileText } from "lucide-react";
+import React, { useRef, useState } from "react";
 import { ResumeEditProvider, useResumeEdit } from "../context/ResumeEditContext";
-import Summary from "./sections/Summary";
-import Skills from "./sections/Skills";
-import WorkExperience from "./sections/WorkExperience";
-import Education from "./sections/Education";
-import Certifications from "./sections/Certifications";
-import Projects from "./sections/Projects";
 import { usePdfGenerator } from "../hooks/usePdfGenerator";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ResumeData, ResumeResponse } from "../types";
+import Certifications from "./sections/Certifications";
+import Education from "./sections/Education";
+import Projects from "./sections/Projects";
+import Skills from "./sections/Skills";
+import Summary from "./sections/Summary";
+import WorkExperience from "./sections/WorkExperience";
 
 interface OptimizedResumeProps {
   response: ResumeData;
@@ -68,14 +68,17 @@ function OptimizedResumeContent({
   const { editableResume } = useResumeEdit();
   const { generatePreview, previewUrl } = usePdfGenerator();
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   
   const handlePreview = async () => {
+    setIsPreviewLoading(true);
     const resumeResponse = {
       data: editableResume,
       original: response
     } as ResumeResponse;
     await generatePreview(editableResume, resumeResponse);
     setIsPreviewOpen(true);
+    setIsPreviewLoading(false);
   };
 
   return (
@@ -145,36 +148,46 @@ function OptimizedResumeContent({
                 >
                   Summary
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="skills"
-                  className="flex-1 min-w-[100px] px-2 py-3 text-sm"
-                >
-                  Skills
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="experience"
-                  className="flex-1 min-w-[100px] px-2 py-3 text-sm"
-                >
-                  Experience
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="education"
-                  className="flex-1 min-w-[100px] px-2 py-3 text-sm"
-                >
-                  Education
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="certifications"
-                  className="flex-1 min-w-[100px] px-2 py-3 text-sm"
-                >
-                  Certificates
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="projects"
-                  className="flex-1 min-w-[100px] px-2 py-3 text-sm"
-                >
-                  Projects
-                </TabsTrigger>
+                {(editableResume.skills && Object.keys(editableResume.skills).length > 0) && (
+                  <TabsTrigger 
+                    value="skills"
+                    className="flex-1 min-w-[100px] px-2 py-3 text-sm"
+                  >
+                    Skills
+                  </TabsTrigger>
+                )}
+                {(editableResume.work_experience && editableResume.work_experience.length > 0) && (
+                  <TabsTrigger 
+                    value="experience"
+                    className="flex-1 min-w-[100px] px-2 py-3 text-sm"
+                  >
+                    Experience
+                  </TabsTrigger>
+                )}
+                {(editableResume.education && editableResume.education.length > 0) && (
+                  <TabsTrigger 
+                    value="education"
+                    className="flex-1 min-w-[100px] px-2 py-3 text-sm"
+                  >
+                    Education
+                  </TabsTrigger>
+                )}
+                {(editableResume.certifications && editableResume.certifications.length > 0) && (
+                  <TabsTrigger 
+                    value="certifications"
+                    className="flex-1 min-w-[100px] px-2 py-3 text-sm"
+                  >
+                    Certificates
+                  </TabsTrigger>
+                )}
+                {(editableResume.projects && editableResume.projects.length > 0) && (
+                  <TabsTrigger 
+                    value="projects"
+                    className="flex-1 min-w-[100px] px-2 py-3 text-sm"
+                  >
+                    Projects
+                  </TabsTrigger>
+                )}
               </TabsList>
             </div>
             
@@ -186,65 +199,115 @@ function OptimizedResumeContent({
                 </div>
               </TabsContent>
               
-              <TabsContent value="skills" className="mt-0 focus:outline-none">
-                <div className="space-y-4">
-                  <Skills {...response.skills} isEditMode={isEditMode} />
-                </div>
-              </TabsContent>
+              {(editableResume.skills && Object.keys(editableResume.skills).length > 0) && (
+                <TabsContent value="skills" className="mt-0 focus:outline-none">
+                  <div className="space-y-4">
+                    <Skills {...response.skills} isEditMode={isEditMode} />
+                  </div>
+                </TabsContent>
+              )}
               
-              <TabsContent value="experience" className="mt-0 focus:outline-none">
-                <div className="space-y-4">
-                  <WorkExperience {...response.work_experience} isEditMode={isEditMode} />
-                </div>
-              </TabsContent>
+              {(editableResume.work_experience && editableResume.work_experience.length > 0) && (
+                <TabsContent value="experience" className="mt-0 focus:outline-none">
+                  <div className="space-y-4">
+                    <WorkExperience {...response.work_experience} isEditMode={isEditMode} />
+                  </div>
+                </TabsContent>
+              )}
               
-              <TabsContent value="education" className="mt-0 focus:outline-none">
-                <div className="space-y-4">
-                  <Education education={response.education} />
-                </div>
-              </TabsContent>
+              {(editableResume.education && editableResume.education.length > 0) && (
+                <TabsContent value="education" className="mt-0 focus:outline-none">
+                  <div className="space-y-4">
+                    <Education education={response.education} />
+                  </div>
+                </TabsContent>
+              )}
               
-              <TabsContent value="certifications" className="mt-0 focus:outline-none">
-                <div className="space-y-4">
-                  <Certifications certifications={response.certifications} />
-                </div>
-              </TabsContent>
+              {(editableResume.certifications && editableResume.certifications.length > 0) && (
+                <TabsContent value="certifications" className="mt-0 focus:outline-none">
+                  <div className="space-y-4">
+                    <Certifications certifications={response.certifications} />
+                  </div>
+                </TabsContent>
+              )}
               
-              <TabsContent value="projects" className="mt-0 focus:outline-none">
-                <div className="space-y-4">
-                  <Projects projects={response.projects} isEditMode={isEditMode} />
-                </div>
-              </TabsContent>
+              {(editableResume.projects && editableResume.projects.length > 0) && (
+                <TabsContent value="projects" className="mt-0 focus:outline-none">
+                  <div className="space-y-4">
+                    <Projects projects={response.projects} isEditMode={isEditMode} />
+                  </div>
+                </TabsContent>
+              )}
             </div>
           </Tabs>
         </div>
       </div>
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-  <DialogContent className="max-w-6xl w-full h-[100vh] p-2">
-    <DialogTitle>Resume Preview</DialogTitle>
-    <DialogDescription className="mb-2">
-      Preview how your resume will look when downloaded
-    </DialogDescription>
-    {previewUrl && (
-      <div className="w-full h-[calc(100%-0rem)] overflow-scroll">
-        <iframe
-  src={previewUrl}
-  className="w-full h-[90vh]"
-  title="Resume Preview"
-  style={{ 
-    border: 'none',
-    width: '100%',
-    height: '100vh', // Adjust this to ensure full visibility
-    overflow: 'auto'
-    
-  }}
-/>
-
-      </div>
-    )}
-  </DialogContent>
-</Dialog>
+        <DialogContent className="max-w-6xl w-full max-h-[90vh] p-2">
+          <DialogTitle>Resume Preview</DialogTitle>
+          <DialogDescription className="mb-2">
+            Preview how your resume will look when downloaded
+          </DialogDescription>
+          {isPreviewLoading ? (
+            <div className="w-full h-[calc(100%-4rem)] flex items-center justify-center bg-gray-50 rounded-md">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+                <p className="text-sm text-gray-600">Generating preview...</p>
+              </div>
+            </div>
+          ) : previewUrl ? (
+            <div className="w-full h-[calc(100%-4rem)] overflow-hidden border border-gray-200 rounded-md flex flex-col items-center bg-gray-50 relative">
+              <div className="absolute top-2 right-2 z-10 flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="bg-white"
+                  onClick={() => window.open(previewUrl, '_blank')}
+                >
+                  <Expand className="h-4 w-4 mr-1" /> Open in New Tab
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="bg-white"
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = previewUrl;
+                    link.download = "resume.pdf";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-1" /> Download
+                </Button>
+              </div>
+              
+              {/* Direct iframe with simple fallback strategy */}
+              <div className="w-full h-full">
+                <iframe
+                  src={previewUrl}
+                  className="w-full h-full border-0"
+                  style={{backgroundColor: 'white'}}
+                  aria-label="PDF Resume Preview"
+                />
+              </div>
+              
+              {/* Fallback message that appears beneath iframe */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gray-100 p-2 text-center text-sm">
+                <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  If the preview doesn&apos;t appear, click here to open in a new tab
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full h-[calc(100%-4rem)] flex items-center justify-center bg-gray-50 rounded-md">
+              <p className="text-sm text-gray-600">Could not generate preview</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

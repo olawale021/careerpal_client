@@ -4,14 +4,14 @@ import React, { FormEvent } from "react";
 
 import { FileText } from "lucide-react";
 
+import ErrorMessage from "./components/ErrorMessage";
+import LoadingState from "./components/LoadingState";
+import OptimizedResume from "./components/OptimizedResume";
 import ResumeUploadForm from "./components/ResumeUploadForm";
 import ScoreResult from "./components/ScoreResult";
-import OptimizedResume from "./components/OptimizedResume";
-import LoadingState from "./components/LoadingState";
-import ErrorMessage from "./components/ErrorMessage";
-import { useResumeOptimizer } from "./hooks/useResumeOptimizer";
-import { usePdfGenerator } from "./hooks/usePdfGenerator";
 import { ResumeEditProvider } from "./context/ResumeEditContext";
+import { usePdfGenerator } from "./hooks/usePdfGenerator";
+import { useResumeOptimizer } from "./hooks/useResumeOptimizer";
 import { ResumeData } from "./types";
 
 

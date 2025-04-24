@@ -1,13 +1,13 @@
+import type { NextAuthOptions, User } from "next-auth";
 import NextAuth from "next-auth";
-import type { NextAuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import type { User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 
 // Define custom types
 interface ExtendedUser extends User {
   jwt?: string;
   id: string;
+  refreshToken?: string;
 }
 
 // Define session type
@@ -19,6 +19,7 @@ declare module "next-auth" {
       image?: string | null;
       id?: string;
       jwt?: string;
+      refreshToken?: string;
     };
   }
 }
@@ -68,6 +69,7 @@ const options: NextAuthOptions = {
             name: data.full_name,
             email: credentials.email,
             jwt: data.access_token,
+            refreshToken: data.refresh_token,
           };
         } catch (error) {
           console.error("Credentials login error:", error);
@@ -107,11 +109,12 @@ const options: NextAuthOptions = {
           return false;
         }
 
-        const { access_token, user_id } = await response.json();
+        const { access_token, refresh_token, user_id } = await response.json();
         
         // Extend the user object
         const extendedUser = user as ExtendedUser;
         extendedUser.jwt = access_token;
+        extendedUser.refreshToken = refresh_token;
         extendedUser.id = user_id;
 
         return true;
@@ -124,14 +127,52 @@ const options: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        // Add any other user properties you want in the token
+        token.jwt = (user as ExtendedUser).jwt;
+        token.refreshToken = (user as ExtendedUser).refreshToken;
       }
+      
+      // Handle token expiration and refresh
+      if (token.jwt) {
+        // Check if token is expired (this is a simplified check)
+        const tokenExp = JSON.parse(atob((token.jwt as string).split('.')[1])).exp;
+        const currentTime = Math.floor(Date.now() / 1000);
+        
+        // If token is expired or about to expire (within 5 minutes)
+        if (tokenExp < currentTime + 300 && token.refreshToken) {
+          try {
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+            const response = await fetch(`${backendUrl}/auth/refresh-token`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ refresh_token: token.refreshToken }),
+            });
+            
+            if (response.ok) {
+              const refreshedTokens = await response.json();
+              token.jwt = refreshedTokens.access_token;
+              console.log("Successfully refreshed access token");
+            } else {
+              // If refresh failed, clear the tokens
+              console.error("Failed to refresh token");
+              token.jwt = undefined;
+              token.refreshToken = undefined;
+            }
+          } catch (error) {
+            console.error("Error refreshing token:", error);
+            token.jwt = undefined;
+            token.refreshToken = undefined;
+          }
+        }
+      }
+      
       return token;
     },
 
     async session({ session, token }) {
-      if (session.user && token.sub) {
+      if (session.user) {
         session.user.id = token.sub;
+        session.user.jwt = token.jwt as string;
+        session.user.refreshToken = token.refreshToken as string;
       }
       return session;
     },
