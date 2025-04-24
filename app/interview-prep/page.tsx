@@ -149,7 +149,7 @@ export default function InterviewPrep() {
         headers: {
           // Content-Type is deliberately omitted to let the browser set it correctly with boundary
         }
-      });
+      }) as QuestionsResponse & { error?: string };
 
       if (response && !response.error) {
         setQuestionsResponse(response);
@@ -188,7 +188,7 @@ export default function InterviewPrep() {
       const response = await fetchApi("/interview/answer-tips", {
         method: "POST",
         body: formData,
-      });
+      }) as AnswerTipsResponse & { error?: string };
 
       if (response && !response.error) {
         setAnswerTips(response);
@@ -258,7 +258,7 @@ export default function InterviewPrep() {
       const response = await fetchApi("/interview/simulate", {
         method: "POST",
         body: formData,
-      });
+      }) as SimulationResponse & { error?: string };
 
       if (response && !response.error) {
         setSimulationResults(response);

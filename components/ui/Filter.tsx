@@ -1,30 +1,30 @@
     "use client";
 
-    import { useState } from "react";
-    import { Button } from "@/components/ui/button";
-    import { Input } from "@/components/ui/input";
-    import { Label } from "@/components/ui/label";
-    import {
+    import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-    } from "@/components/ui/select";
-    import {
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import {
     Sheet,
     SheetContent,
+    SheetFooter,
     SheetHeader,
     SheetTitle,
     SheetTrigger,
-    SheetFooter,
-    } from "@/components/ui/sheet";
-    import { Separator } from "@/components/ui/separator";
-    import { SlidersHorizontal, X } from "lucide-react";
-    import { Badge } from "@/components/ui/badge";
+} from "@/components/ui/sheet";
+import { SlidersHorizontal, X } from "lucide-react";
+import { useState } from "react";
 
     export interface FilterProps {
-    onFilterChange: (filters: FilterValues) => void;
+    onFilterChangeAction: (filters: FilterValues) => void;
     values: FilterValues;
     onClearFiltersAction: () => void;
     }
@@ -60,7 +60,7 @@
     "Past month",
     ];
 
-    export function Filter({ onFilterChange, values, onClearFiltersAction }: FilterProps) {
+    export function Filter({ onFilterChangeAction, values, onClearFiltersAction }: FilterProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [activeFilters, setActiveFilters] = useState<FilterValues>(values);
     const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>(values.jobType);
@@ -79,7 +79,7 @@
         jobType: selectedJobTypes,
         };
         setActiveFilters(newFilters);
-        onFilterChange(newFilters);
+        onFilterChangeAction(newFilters);
         setIsOpen(false);
     };
 
@@ -96,7 +96,7 @@
         setActiveFilters(defaultFilters);
         setSelectedJobTypes([]);
         onClearFiltersAction();
-        onFilterChange(defaultFilters);
+        onFilterChangeAction(defaultFilters);
     };
 
     const getActiveFilterCount = () => {
